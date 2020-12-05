@@ -1,9 +1,17 @@
-.idea/
+# Composer lock file
 composer.lock
-vendor/
-clover.xml
-coveralls.json
-tests/server.exe
-tests/server
+
+# IDEs
+/.idea
+/.vscode
+
+# Vendors
+/vendor
 **/vendor
-vendor_php
+
+# Temp dirs & trash
+/tests/server*
+clover*
+cover*
+.DS_Store
+*.cache

@@ -228,7 +228,7 @@ abstract class RPCTest extends TestCase
     public function testJsonException(): void
     {
         $this->expectException(ServiceException::class);
-        $this->expectExceptionMessageMatches('#.*json encode.*#');
+        $this->expectExceptionMessageRegExp('#.*json encode.*#');
 
         $conn = $this->makeRPC();
 
