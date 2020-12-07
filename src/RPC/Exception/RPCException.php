@@ -8,8 +8,11 @@
 
 declare(strict_types=1);
 
-namespace Spiral\Goridge\Exceptions;
+namespace Spiral\Goridge\RPC\Exception;
 
-class InvalidArgumentException extends GoridgeException
+use Spiral\Goridge\Exception\GoridgeException;
+
+class RPCException extends GoridgeException
 {
+
 }

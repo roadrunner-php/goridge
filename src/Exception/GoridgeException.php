@@ -8,12 +8,10 @@
 
 declare(strict_types=1);
 
-namespace Spiral\Goridge;
+namespace Spiral\Goridge\Exception;
 
-interface StringableRelayInterface
+use RuntimeException;
+
+class GoridgeException extends RuntimeException
 {
-    /**
-     * @return string
-     */
-    public function __toString(): string;
 }

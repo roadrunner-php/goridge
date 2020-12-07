@@ -3,15 +3,13 @@
 /**
  * Dead simple, high performance, drop-in bridge to Golang RPC with zero dependencies
  *
- * @author Wolfy-J
+ * @author Valentin V
  */
 
 declare(strict_types=1);
 
-namespace Spiral\Goridge\Exceptions;
+namespace Spiral\Goridge\Exception;
 
-use RuntimeException;
-
-class GoridgeException extends RuntimeException
+class RelayFactoryException extends GoridgeException
 {
 }

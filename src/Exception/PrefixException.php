@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace Spiral\Goridge\Exceptions;
+namespace Spiral\Goridge\Exception;
 
 class PrefixException extends TransportException
 {

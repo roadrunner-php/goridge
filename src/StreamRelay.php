@@ -19,7 +19,7 @@ namespace Spiral\Goridge;
  * prefix:
  * [ flag       ][ message length, unsigned int 64bits, LittleEndian ]
  */
-class StreamRelay implements RelayInterface, SendPackageRelayInterface
+class StreamRelay extends Relay
 {
     /** @var resource */
     private $in;
@@ -34,24 +34,24 @@ class StreamRelay implements RelayInterface, SendPackageRelayInterface
      * @param resource $in  Must be readable.
      * @param resource $out Must be writable.
      *
-     * @throws Exceptions\InvalidArgumentException
+     * @throws Exception\InvalidArgumentException
      */
     public function __construct($in, $out)
     {
         if (!is_resource($in) || get_resource_type($in) !== 'stream') {
-            throw new Exceptions\InvalidArgumentException('expected a valid `in` stream resource');
+            throw new Exception\InvalidArgumentException('expected a valid `in` stream resource');
         }
 
         if (!$this->assertReadable($in)) {
-            throw new Exceptions\InvalidArgumentException('resource `in` must be readable');
+            throw new Exception\InvalidArgumentException('resource `in` must be readable');
         }
 
         if (!is_resource($out) || get_resource_type($out) !== 'stream') {
-            throw new Exceptions\InvalidArgumentException('expected a valid `out` stream resource');
+            throw new Exception\InvalidArgumentException('expected a valid `out` stream resource');
         }
 
         if (!$this->assertWritable($out)) {
-            throw new Exceptions\InvalidArgumentException('resource `out` must be writable');
+            throw new Exception\InvalidArgumentException('resource `out` must be writable');
         }
 
         $this->in = $in;
@@ -59,103 +59,70 @@ class StreamRelay implements RelayInterface, SendPackageRelayInterface
     }
 
     /**
-     * Send message package with header and body.
-     *
-     * @param string   $headerPayload
-     * @param int|null $headerFlags
-     * @param string   $bodyPayload
-     * @param int|null $bodyFlags
-     * @return self
-     */
-    public function sendPackage(
-        string $headerPayload,
-        ?int $headerFlags,
-        string $bodyPayload,
-        ?int $bodyFlags = null
-    ): self {
-        $headerPackage = packMessage($headerPayload, $headerFlags);
-        $bodyPackage = packMessage($bodyPayload, $bodyFlags);
-        if ($headerPackage === null || $bodyPackage === null) {
-            throw new Exceptions\TransportException('unable to send payload with PAYLOAD_NONE flag');
-        }
-
-        if (
-            fwrite(
-                $this->out,
-                $headerPackage['body'] . $bodyPackage['body'],
-                34 + $headerPackage['size'] + $bodyPackage['size']
-            ) === false
-        ) {
-            throw new Exceptions\TransportException('unable to write payload to the stream');
-        }
-
-        return $this;
-    }
-
-    /**
      * {@inheritdoc}
      * @return self
      */
-    public function send(string $payload, ?int $flags = null): self
+    public function send(Frame $frame): void
     {
-        $package = packMessage($payload, $flags);
-        if ($package === null) {
-            throw new Exceptions\TransportException('unable to send payload with PAYLOAD_NONE flag');
+        $body = '';
+        foreach ($frame as $msg) {
+            $body .= self::packMessage($msg);
         }
 
-        if (fwrite($this->out, $package['body'], 17 + $package['size']) === false) {
-            throw new Exceptions\TransportException('unable to write payload to the stream');
+        if (fwrite($this->out, $body, strlen($body)) === false) {
+            throw new Exception\TransportException('unable to write payload to the stream');
         }
-
-        return $this;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function receiveSync(?int &$flags = null): ?string
+    public function waitFrame(): Frame
     {
+        $msg = new Frame(null, 0);
+
         $prefix = $this->fetchPrefix();
-        $flags = $prefix['flags'];
+        $msg->flags = $prefix['flags'];
 
-        $result = '';
         if ($prefix['size'] !== 0) {
+            $msg->body = '';
             $leftBytes = $prefix['size'];
 
             //Add ability to write to stream in a future
             while ($leftBytes > 0) {
                 $buffer = fread($this->in, min($leftBytes, self::BUFFER_SIZE));
                 if ($buffer === false) {
-                    throw new Exceptions\TransportException('error reading payload from the stream');
+                    throw new Exception\TransportException('error reading payload from the stream');
                 }
 
-                $result .= $buffer;
+                $msg->body .= $buffer;
                 $leftBytes -= strlen($buffer);
             }
         }
 
-        return ($result !== '') ? $result : null;
+        return $msg;
     }
 
     /**
-     * @return array<string, mixed> Prefix [flag, length]
+     * @return array Prefix [flag, length]
      *
-     * @throws Exceptions\PrefixException
+     * @throws Exception\PrefixException
      */
     private function fetchPrefix(): array
     {
+        // todo: update protocol
         $prefixBody = fread($this->in, 17);
         if ($prefixBody === false) {
-            throw new Exceptions\PrefixException('unable to read prefix from the stream');
+            throw new Exception\PrefixException('unable to read prefix from the stream');
         }
 
         $result = unpack('Cflags/Psize/Jrevs', $prefixBody);
         if (!is_array($result)) {
-            throw new Exceptions\PrefixException('invalid prefix');
+            throw new Exception\PrefixException('invalid prefix');
         }
 
         if ($result['size'] !== $result['revs']) {
-            throw new Exceptions\PrefixException('invalid prefix (checksum)');
+            throw new Exception\PrefixException('invalid prefix (checksum)');
         }
 
         return $result;

@@ -8,8 +8,8 @@
 
 declare(strict_types=1);
 
-namespace Spiral\Goridge\Exceptions;
+namespace Spiral\Goridge\RPC\Exception;
 
-class RPCException extends GoridgeException
+class ServiceException extends RPCException
 {
 }
