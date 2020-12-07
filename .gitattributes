@@ -1,1 +1,7 @@
-/tests export-ignore
+* text=auto
+
+/.github      export-ignore
+/tests        export-ignore
+/.*           export-ignore
+/phpunit.xml* export-ignore
+/phpstan.*    export-ignore

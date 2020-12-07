@@ -14,7 +14,7 @@ if (!function_exists('Spiral\\Goridge\\packMessage')) {
     /**
      * @param string   $payload
      * @param int|null $flags
-     * @return array|null
+     * @return array<string, mixed>|null
      * @internal
      */
     function packMessage(string $payload, ?int $flags = null): ?array

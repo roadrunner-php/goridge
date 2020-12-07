@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+## UNRELEASED
+- Go-code removed from current repository
+- Improve CI
+
 ## v2.4.2 (19.05.2020)
 - Add phpstan analyzer
 - Fix code warnings from phpstan
@@ -21,12 +25,12 @@ CHANGELOG
 - Added the ability to define own relay with a codec (by @Reasno)
 
 ## v2.3.0 (23.03.2020)
-- Replaced std encoding/json package with the https://github.com/json-iterator/go 
+- Replaced std encoding/json package with the https://github.com/json-iterator/go
 - Added BORS and GHA support
 - golang modules updated to v2
 
 ## v2.2.1 (30.11.2019)
-- Fixed too strict StreamRelay check by @tarampampam 
+- Fixed too strict StreamRelay check by @tarampampam
 
 ## v2.2.0 (29.11.2019)
 - Updated travis to support go 1.13
@@ -34,7 +38,7 @@ CHANGELOG
 - Add go modules support
 - Optimize pack function
 
-by @ValeryPiashchynski 
+by @ValeryPiashchynski
 
 ## v2.1.4 (01.04.2019)
 - minor performance improvements by @zloyuser
@@ -78,7 +82,7 @@ by @ValeryPiashchynski
 - Added ability to invoke PHP from Go
 - Added control headers to manage execution flow
 - CLOSE_CONNECTION and KEEP_CONNECTION constants are removed
-- \*\_BODY constants renamed to PAYLOAD\_\* to comply with .go code 
+- \*\_BODY constants renamed to PAYLOAD\_\* to comply with .go code
 - Protocol is extracted from Codec as independent abstraction
 - Simplified RPC Codec implementation
 - Code is formatted to comply to Golint
@@ -87,7 +91,7 @@ by @ValeryPiashchynski
 - More error checks in PHP code
 - License holder moved from Spiral Framework to SpiralScout
 
-## v1.0.4 
+## v1.0.4
 - library dependency downgraded to support PHP7.0 by @thePanz
 
 ## v1.0.1 (14.08.2017)

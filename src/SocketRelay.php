@@ -294,7 +294,7 @@ class SocketRelay implements RelayInterface, SendPackageRelayInterface, Stringab
     }
 
     /**
-     * @return array Prefix [flag, length]
+     * @return array<string, mixed> Prefix [flag, length]
      *
      * @throws Exceptions\PrefixException
      */
