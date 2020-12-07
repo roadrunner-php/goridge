@@ -146,8 +146,9 @@ class SocketRelay extends Relay implements StringableRelayInterface
     {
         $this->connect();
 
-        $msg = new Frame(null, 0);
+        $msg = new Frame(null, null, 0);
 
+        // todo: implement new protocol
         $prefix = $this->fetchPrefix();
         $msg->flags = $prefix['flags'];
 
@@ -179,16 +180,12 @@ class SocketRelay extends Relay implements StringableRelayInterface
     }
 
     /**
-     * @param Frame ...$frame
+     * @param Frame $frame
      */
     public function send(Frame $frame): void
     {
         $this->connect();
-
-        $body = '';
-        foreach ($frame as $msg) {
-            $body .= self::packMessage($msg);
-        }
+        $body = self::packMessage($frame);
 
         if (socket_send($this->socket, $body, strlen($body), 0) === false) {
             throw new Exception\TransportException('unable to write payload to the stream');

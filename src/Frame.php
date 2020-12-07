@@ -18,16 +18,21 @@ final class Frame
     /** @var string|null */
     public ?string $body;
 
+    /** @var string|null */
+    public ?string $options;
+
     /** @var int */
     public int     $flags;
 
     /**
      * @param string|null $body
+     * @param string|null $options
      * @param int         $flags
      */
-    public function __construct(?string $body, int $flags = 0)
+    public function __construct(?string $body, ?string $options, int $flags = 0)
     {
         $this->body = $body;
+        $this->options = $options;
         $this->flags = $flags;
     }
 }

@@ -60,26 +60,11 @@ class StreamRelay extends Relay
 
     /**
      * {@inheritdoc}
-     * @return self
-     */
-    public function send(Frame $frame): void
-    {
-        $body = '';
-        foreach ($frame as $msg) {
-            $body .= self::packMessage($msg);
-        }
-
-        if (fwrite($this->out, $body, strlen($body)) === false) {
-            throw new Exception\TransportException('unable to write payload to the stream');
-        }
-    }
-
-    /**
-     * {@inheritdoc}
      */
     public function waitFrame(): Frame
     {
-        $msg = new Frame(null, 0);
+        // todo: implement new protocol
+        $msg = new Frame(null, null, 0);
 
         $prefix = $this->fetchPrefix();
         $msg->flags = $prefix['flags'];
@@ -101,6 +86,19 @@ class StreamRelay extends Relay
         }
 
         return $msg;
+    }
+
+    /**
+     * {@inheritdoc}
+     * @return self
+     */
+    public function send(Frame $frame): void
+    {
+        $body = self::packMessage($frame);
+
+        if (fwrite($this->out, $body, strlen($body)) === false) {
+            throw new Exception\TransportException('unable to write payload to the stream');
+        }
     }
 
     /**
