@@ -130,7 +130,7 @@ class RPC implements RPCInterface
     /**
      * @param string $method
      * @param mixed  $payload
-     * @return Frame[]
+     * @return Frame
      */
     private function packRequest(string $method, $payload): array
     {
@@ -139,8 +139,8 @@ class RPC implements RPCInterface
         }
 
         return [
-            new Frame(pack('P', self::$seq) . $method, Frame::CONTROL),
-            new Frame(pack('C', $this->codec->getIndex()) . $this->codec->encode($payload))
+            new Frame($method, pack('P', self::$seq), Frame::CONTROL),
+            new Frame($this->codec->encode($payload), null, Frame::CONTROL | $this->codec->getIndex())
         ];
     }
 

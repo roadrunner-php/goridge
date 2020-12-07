@@ -180,12 +180,16 @@ class SocketRelay extends Relay implements StringableRelayInterface
     }
 
     /**
-     * @param Frame $frame
+     * @param Frame ...$frame
      */
-    public function send(Frame $frame): void
+    public function send(Frame ...$frame): void
     {
         $this->connect();
-        $body = self::packMessage($frame);
+
+        $body = '';
+        foreach ($frame as $f) {
+            $body = self::packFrame($f);
+        }
 
         if (socket_send($this->socket, $body, strlen($body), 0) === false) {
             throw new Exception\TransportException('unable to write payload to the stream');
