@@ -8,11 +8,11 @@
 
 declare(strict_types=1);
 
-namespace Spiral\Tests;
+namespace Spiral\Goridge\Tests;
 
 use Spiral\Goridge\SocketRelay;
 
-class TCPSocketTest extends RPCTest
+class TPCRPCTest extends RPCTest
 {
     public const SOCK_ADDR = '127.0.0.1';
     public const SOCK_PORT = 7079;

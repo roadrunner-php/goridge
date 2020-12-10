@@ -12,12 +12,12 @@
   "require": {
     "php": ">=7.4",
     "ext-json": "*",
-    "ext-sockets": "*",
+    "ext-sockets": "*"
   },
   "require-dev": {
+    "spiral/code-style": "^1.0",
     "rybakit/msgpack": "^0.7.1",
     "phpunit/phpunit": "~8.0",
-    "spiral/code-style": "^1.0",
     "phpstan/phpstan": "~0.12.34"
   },
   "autoload": {
@@ -27,7 +27,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Spiral\\Tests\\": "tests/Cases/"
+      "Spiral\\Goridge\\Tests\\": "tests/Goridge/"
     }
   },
   "scripts": {

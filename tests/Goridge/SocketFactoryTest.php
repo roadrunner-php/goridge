@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Spiral\Tests;
+namespace Spiral\Goridge\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Spiral\Goridge\Exceptions\InvalidArgumentException;
+use Spiral\Goridge\Exception\InvalidArgumentException;
 use Spiral\Goridge\SocketRelay;
 
-class SocketRelayTest extends TestCase
+class SocketFactoryTest extends TestCase
 {
     /**
      * @dataProvider constructorProvider

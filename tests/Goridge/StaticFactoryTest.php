@@ -8,16 +8,16 @@
 
 declare(strict_types=1);
 
-namespace Spiral\Tests;
+namespace Spiral\Goridge\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Spiral\Goridge\Exceptions;
+use Spiral\Goridge\Exception;
 use Spiral\Goridge\Relay;
 use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\StreamRelay;
 use Throwable;
 
-class RelayFactoryTest extends TestCase
+class StaticFactoryTest extends TestCase
 {
     /**
      * @dataProvider formatProvider
@@ -28,12 +28,12 @@ class RelayFactoryTest extends TestCase
     {
         $this->assertTrue(true);
         if ($expectedException) {
-            $this->expectException(Exceptions\RelayFactoryException::class);
+            $this->expectException(Exception\RelayFactoryException::class);
         }
 
         try {
             Relay::create($connection);
-        } catch (Exceptions\RelayFactoryException $exception) {
+        } catch (Exception\RelayFactoryException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
             //do nothing, that's not a factory issue
