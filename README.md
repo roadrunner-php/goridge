@@ -1,7 +1,7 @@
 # High-performance PHP-to-Golang IPC bridge
 
 [![Latest Stable Version](https://poser.pugx.org/spiral/goridge/v/stable)](https://packagist.org/packages/spiral/goridge)
-![CI](https://github.com/spiral/goridge-php/workflows/CI/badge.svg)
+[![CI](https://github.com/spiral/goridge-php/workflows/CI/badge.svg)](https://github.com/spiral/goridge-php/actions)
 [![Codecov](https://codecov.io/gh/spiral/goridge-php/branch/master/graph/badge.svg)](https://codecov.io/gh/spiral/goridge-php/)
 [![Chat](https://img.shields.io/badge/discord-chat-magenta.svg)](https://discord.gg/TFeEmCs)
 
