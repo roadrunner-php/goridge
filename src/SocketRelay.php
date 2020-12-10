@@ -162,12 +162,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
         $length = $parts[1] * 4 + $parts[2];
 
         while ($length > 0) {
-            $bufferLength = socket_recv(
-                $this->socket,
-                $buffer,
-                min(self::BUFFER_SIZE, $length),
-                MSG_WAITALL
-            );
+            $bufferLength = socket_recv($this->socket, $buffer, $length, MSG_WAITALL);
 
             if ($bufferLength === false || $buffer === null) {
                 throw new Exception\HeaderException(sprintf(

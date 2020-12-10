@@ -75,7 +75,7 @@ class StreamRelay extends Relay
         $length = $parts[1] * 4 + $parts[2];
 
         while ($length > 0) {
-            $buffer = fread($this->in, min($length, self::BUFFER_SIZE));
+            $buffer = fread($this->in, $length);
             if ($buffer === false) {
                 throw new Exception\TransportException('error reading payload from the stream');
             }

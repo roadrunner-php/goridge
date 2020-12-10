@@ -14,7 +14,6 @@ use Throwable;
 
 abstract class Relay implements RelayInterface
 {
-    protected const BUFFER_SIZE    = 65536;
     protected const CONNECTION_EXP = '/(?P<protocol>[^:\/]+):\/\/(?P<arg1>[^:]+)(:(?P<arg2>[^:]+))?/';
 
     public const TCP_SOCKET  = 'tcp';

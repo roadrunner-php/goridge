@@ -14,9 +14,9 @@ type Service struct{}
 
 // Payload
 type Payload struct {
-    Name  string            `json:"name"`
-    Value int               `json:"value"`
-    Keys  map[string]string `json:"keys,omitempty"`
+    Name  string
+    Value int
+    Keys  map[string]string
 }
 
 // Negate number
