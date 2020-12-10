@@ -23,7 +23,7 @@ class MsgPackRPCTest extends RPCTest
     public function testJsonException(): void
     {
         $this->expectException(ServiceException::class);
-        $this->expectDeprecationMessageMatches('#.*msgpack: invalid.*#');
+        $this->expectExceptionMessageMatches('#.*msgpack: invalid.*#');
 
         $conn = $this->makeRPC();
 
