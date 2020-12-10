@@ -39,10 +39,10 @@ jobs:
         run: composer analyze
 
       - name: Build test server
-        run: docker build --tag test-server:local -f ./tests/test-server/Dockerfile ./tests/test-server
+        run: docker build --tag test-server:v1.0 -f ./tests/test-server/Dockerfile ./tests/test-server
 
       - name: Start test server
-        run: docker run --rm -d -p "7079:7079/tcp" test-server:local
+        run: docker run --rm -d -p "7079:7079/tcp" test-server:v1.0
 
       - name: Run tests
         run: composer test-cover
