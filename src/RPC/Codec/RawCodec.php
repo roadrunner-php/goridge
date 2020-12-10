@@ -34,7 +34,7 @@ final class RawCodec implements CodecInterface
     {
         if (!is_string($payload)) {
             throw new CodecException(
-                sprintf("Only string payloads can be send using RawCodec, %s given", gettype($payload))
+                sprintf('Only string payloads can be send using RawCodec, %s given', gettype($payload))
             );
         }
 

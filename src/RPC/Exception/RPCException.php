@@ -14,5 +14,4 @@ use Spiral\Goridge\Exception\GoridgeException;
 
 class RPCException extends GoridgeException
 {
-
 }

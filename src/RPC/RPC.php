@@ -19,12 +19,12 @@ use Spiral\Goridge\StringableRelayInterface;
 
 class RPC implements RPCInterface
 {
-    private Relay          $relay;
+    private Relay $relay;
     private CodecInterface $codec;
-    private ?string        $service = null;
+    private ?string $service = null;
 
     /** @var positive-int */
-    private static int $seq = 0;
+    private static int $seq = 1;
 
     /**
      * @param Relay               $relay
@@ -94,6 +94,18 @@ class RPC implements RPCInterface
     }
 
     /**
+     * @param string              $connection
+     * @param CodecInterface|null $codec
+     * @return RPCInterface
+     */
+    public static function create(string $connection, CodecInterface $codec = null): RPCInterface
+    {
+        $relay = \Spiral\Goridge\Relay::create($connection);
+
+        return new self($relay, $codec);
+    }
+
+    /**
      * @param Frame $frame
      * @return mixed
      *
@@ -102,7 +114,7 @@ class RPC implements RPCInterface
     private function decodeResponse(Frame $frame)
     {
         // exclude method name
-        $body = substr($frame->payload, $frame->options[1]);
+        $body = substr((string)$frame->payload, $frame->options[1]);
 
         if ($frame->hasFlag(Frame::ERROR)) {
             throw new Exception\ServiceException(
@@ -133,16 +145,5 @@ class RPC implements RPCInterface
             [self::$seq, strlen($method)],
             $this->codec->getIndex()
         );
-    }
-
-    /**
-     * @param string              $connection
-     * @param CodecInterface|null $codec
-     * @return RPCInterface
-     */
-    public static function create(string $connection, CodecInterface $codec = null): RPCInterface
-    {
-        $relay = \Spiral\Goridge\Relay::create($connection);
-        return new static($relay, $codec);
     }
 }

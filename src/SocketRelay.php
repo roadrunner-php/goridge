@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Spiral\Goridge;
 
 use Error;
+use Spiral\Goridge\Exception\RelayException;
 
 /**
  * Communicates with remote server/client over be-directional socket using byte payload:
@@ -28,9 +29,9 @@ class SocketRelay extends Relay implements StringableRelayInterface
     public const SOCK_UNIX = 1;
 
     private string $address;
-    private bool   $connected = false;
-    private ?int   $port;
-    private int    $type;
+    private bool $connected = false;
+    private ?int $port;
+    private int $type;
 
     /** @var resource */
     private $socket;
@@ -98,6 +99,18 @@ class SocketRelay extends Relay implements StringableRelayInterface
     /**
      * @return string
      */
+    public function __toString(): string
+    {
+        if ($this->type === self::SOCK_TCP) {
+            return "tcp://{$this->address}:{$this->port}";
+        }
+
+        return "unix://{$this->address}";
+    }
+
+    /**
+     * @return string
+     */
     public function getAddress(): string
     {
         return $this->address;
@@ -128,21 +141,10 @@ class SocketRelay extends Relay implements StringableRelayInterface
     }
 
     /**
-     * @return string
+     * @return Frame
+     * @throws RelayException
      */
-    public function __toString(): string
-    {
-        if ($this->type === self::SOCK_TCP) {
-            return "tcp://{$this->address}:{$this->port}";
-        }
-
-        return "unix://{$this->address}";
-    }
-
-    /**
-     * @return Frame|null
-     */
-    public function waitFrame(): ?Frame
+    public function waitFrame(): Frame
     {
         $this->connect();
 
@@ -162,7 +164,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
         $length = $parts[1] * 4 + $parts[2];
 
         while ($length > 0) {
-            $bufferLength = socket_recv($this->socket, $buffer, $length, MSG_WAITALL);
+            $bufferLength = socket_recv($this->socket, $buffer, (int) $length, MSG_WAITALL);
 
             if ($bufferLength === false || $buffer === null) {
                 throw new Exception\HeaderException(sprintf(

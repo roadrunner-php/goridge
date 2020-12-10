@@ -27,15 +27,15 @@ final class Frame
     /** @var string|null */
     public ?string $payload;
 
-    /** @var array */
-    public array $options;
+    /** @var array<int> */
+    public array $options = [];
 
     /** @var int */
     public int $flags;
 
     /**
      * @param string|null $body
-     * @param array       $options
+     * @param array<int>  $options
      * @param int         $flags
      */
     public function __construct(?string $body, array $options = [], int $flags = 0)
@@ -48,11 +48,11 @@ final class Frame
     /**
      * @param int ...$flag
      */
-    public function setFlag(int ...$flag)
+    public function setFlag(int ...$flag): void
     {
         foreach ($flag as $f) {
             if ($f > 255) {
-                throw new InvalidArgumentException("Flags can be byte only");
+                throw new InvalidArgumentException('Flags can be byte only');
             }
 
             $this->flags = $this->flags | $f;
@@ -66,16 +66,16 @@ final class Frame
     public function hasFlag(int $flag): bool
     {
         if ($flag > 255) {
-            throw new InvalidArgumentException("Flags can be byte only");
+            throw new InvalidArgumentException('Flags can be byte only');
         }
 
         return ($this->flags & $flag) !== 0;
     }
 
     /**
-     * @param array ...$options
+     * @param int ...$options
      */
-    public function setOptions(array ...$options)
+    public function setOptions(int ...$options): void
     {
         $this->options = $options;
     }
@@ -91,24 +91,24 @@ final class Frame
             'CCL',
             self::VERSION << 4 | (count($frame->options) + 2),
             $frame->flags,
-            strlen($frame->payload)
+            strlen((string) $frame->payload)
         );
 
         if ($frame->options === []) {
-            $header .= ord(CRC8::calculate($header)) . ord(0);
+            $header .= pack('CC', CRC8::calculate($header), 0);
         } else {
             $header .= pack('CCL*', 0, 0, ...$frame->options);
             $header[6] = chr(CRC8::calculate($header));
         }
 
-        return $header . $frame->payload;
+        return $header . (string) $frame->payload;
     }
 
     /**
      * Parse header and return [flags, num options, payload length].
      *
      * @param string $header 8 bytes.
-     * @return array
+     * @return array<int>
      * @internal
      */
     public static function readHeader(string $header): array
@@ -121,8 +121,8 @@ final class Frame
     }
 
     /**
-     * @param array  $header
-     * @param string $body
+     * @param array<int> $header
+     * @param string     $body
      * @return Frame
      * @internal
      */

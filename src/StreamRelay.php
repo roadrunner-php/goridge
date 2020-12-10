@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge;
 
+use Spiral\Goridge\Exception\RelayException;
+
 /**
  * Communicates with remote server/client over streams using byte payload:
  *
@@ -60,8 +62,9 @@ class StreamRelay extends Relay
 
     /**
      * @return Frame
+     * @throws RelayException
      */
-    public function waitFrame(): ?Frame
+    public function waitFrame(): Frame
     {
         $header = fread($this->in, 8);
         if ($header === false || strlen($header) !== 8) {
@@ -75,7 +78,7 @@ class StreamRelay extends Relay
         $length = $parts[1] * 4 + $parts[2];
 
         while ($length > 0) {
-            $buffer = fread($this->in, $length);
+            $buffer = fread($this->in, (int) $length);
             if ($buffer === false) {
                 throw new Exception\TransportException('error reading payload from the stream');
             }

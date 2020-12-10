@@ -10,15 +10,18 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge;
 
+use Spiral\Goridge\Exception\RelayException;
+
 /**
  * Blocking, duplex relay.
  */
 interface RelayInterface
 {
     /**
-     * @return Frame|null
+     * @return Frame
+     * @throws RelayException
      */
-    public function waitFrame(): ?Frame;
+    public function waitFrame(): Frame;
 
     /**
      * @param Frame $frame

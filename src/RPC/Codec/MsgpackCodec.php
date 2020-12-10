@@ -58,7 +58,7 @@ final class MsgpackCodec implements CodecInterface
     /**
      * Init pack and unpack functions.
      */
-    private function initPacker()
+    private function initPacker(): void
     {
         if (function_exists('msgpack_pack') && function_exists('msgpack_unpack')) {
             $this->pack = static function ($payload) {

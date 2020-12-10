@@ -17,13 +17,13 @@ use Spiral\Goridge\StreamRelay;
 
 class StreamTest extends TestCase
 {
-    public function testMessagePassing()
+    public function testMessagePassing(): void
     {
         $resource = fopen('php://memory', 'r+');
 
         $relay = new StreamRelay($resource, $resource);
 
-        $in = new Frame("hello world", [100, 9001], Frame::CODEC_RAW);
+        $in = new Frame('hello world', [100, 9001], Frame::CODEC_RAW);
         $relay->send($in);
 
         fseek($resource, 0);

@@ -14,11 +14,10 @@ use Throwable;
 
 abstract class Relay implements RelayInterface
 {
-    protected const CONNECTION_EXP = '/(?P<protocol>[^:\/]+):\/\/(?P<arg1>[^:]+)(:(?P<arg2>[^:]+))?/';
-
     public const TCP_SOCKET  = 'tcp';
     public const UNIX_SOCKET = 'unix';
     public const STREAM      = 'pipes';
+    protected const CONNECTION_EXP = '/(?P<protocol>[^:\/]+):\/\/(?P<arg1>[^:]+)(:(?P<arg2>[^:]+))?/';
 
     /**
      * Create relay using string address.
