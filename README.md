@@ -16,7 +16,6 @@ See https://github.com/spiral/roadrunner - High-performance PHP application serv
 ## Features
 
  - no external dependencies or services, drop-in (64bit PHP version required)
- - low message footprint (17 bytes over any binary payload), binary error detection
  - sockets over TCP or Unix (ext-sockets is required), standard pipes
  - very fast (300k calls per second on Ryzen 1700X over 20 threads)
  - native `net/rpc` integration, ability to connect to existed application(s)
