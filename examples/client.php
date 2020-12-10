@@ -13,7 +13,7 @@ use Spiral\Goridge;
 require 'vendor/autoload.php';
 
 $rpc = new Goridge\RPC\RPC(
-    Goridge\Relay::create('tcp://127.0.0.0:6001')
+    Goridge\Relay::create('tcp://127.0.0.1:6001')
 );
 
 $rpc = $rpc->withServicePrefix('App');
