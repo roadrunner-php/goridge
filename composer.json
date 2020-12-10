@@ -12,9 +12,10 @@
   "require": {
     "php": ">=7.4",
     "ext-json": "*",
-    "ext-sockets": "*"
+    "ext-sockets": "*",
   },
   "require-dev": {
+    "rybakit/msgpack": "^0.7.1",
     "phpunit/phpunit": "~8.0",
     "spiral/code-style": "^1.0",
     "phpstan/phpstan": "~0.12.34"
