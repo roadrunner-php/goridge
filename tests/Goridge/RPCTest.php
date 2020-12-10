@@ -248,7 +248,6 @@ abstract class RPCTest extends TestCase
     public function testJsonException(): void
     {
         $this->expectException(CodecException::class);
-        $this->expectExceptionMessageMatches('#.*json encode.*#');
 
         $conn = $this->makeRPC();
 
