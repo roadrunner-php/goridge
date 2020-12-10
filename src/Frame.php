@@ -10,29 +10,130 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge;
 
+use Spiral\Goridge\Exception\InvalidArgumentException;
+
 final class Frame
 {
-    public const ERROR   = 8;
-    public const CONTROL = 16;
+    // Current protocol version.
+    public const VERSION = 0x01;
+
+    // BYTE flags, it means, that we can set multiply flags from this group using bitwise OR
+    public const CODEC_RAW     = 0x04;
+    public const CODEC_JSON    = 0x08;
+    public const CODEC_MSGPACK = 0x10;
+    public const CODEC_GOB     = 0x20;
+    public const ERROR         = 0x40;
 
     /** @var string|null */
-    public ?string $body;
+    public ?string $payload;
 
-    /** @var string|null */
-    public ?string $options;
+    /** @var array */
+    public array $options;
 
     /** @var int */
-    public int     $flags;
+    public int $flags;
 
     /**
      * @param string|null $body
-     * @param string|null $options
+     * @param array       $options
      * @param int         $flags
      */
-    public function __construct(?string $body, ?string $options, int $flags = 0)
+    public function __construct(?string $body, array $options = [], int $flags = 0)
     {
-        $this->body = $body;
+        $this->payload = $body;
         $this->options = $options;
         $this->flags = $flags;
+    }
+
+    /**
+     * @param int ...$flag
+     */
+    public function setFlag(int ...$flag)
+    {
+        foreach ($flag as $f) {
+            if ($f > 255) {
+                throw new InvalidArgumentException("Flags can be byte only");
+            }
+
+            $this->flags = $this->flags | $f;
+        }
+    }
+
+    /**
+     * @param int $flag
+     * @return bool
+     */
+    public function hasFlag(int $flag): bool
+    {
+        if ($flag > 255) {
+            throw new InvalidArgumentException("Flags can be byte only");
+        }
+
+        return ($this->flags & $flag) !== 0;
+    }
+
+    /**
+     * @param array ...$options
+     */
+    public function setOptions(array ...$options)
+    {
+        $this->options = $options;
+    }
+
+    /**
+     * @param Frame $frame
+     * @return string
+     * @internal
+     */
+    public static function packFrame(Frame $frame): string
+    {
+        $header = pack(
+            'CCL',
+            self::VERSION << 4 | (count($frame->options) + 2),
+            $frame->flags,
+            strlen($frame->payload)
+        );
+
+        if ($frame->options === []) {
+            $header .= ord(CRC8::calculate($header)) . ord(0);
+        } else {
+            $header .= pack('CCL*', 0, 0, ...$frame->options);
+            $header[6] = chr(CRC8::calculate($header));
+        }
+
+        return $header . $frame->payload;
+    }
+
+    /**
+     * Parse header and return [flags, num options, payload length].
+     *
+     * @param string $header 8 bytes.
+     * @return array
+     * @internal
+     */
+    public static function readHeader(string $header): array
+    {
+        return [
+            ord($header[1]),
+            (ord($header[0]) & 0x0F) - 2,
+            ord($header[2]) | ord($header[3]) << 8 | ord($header[4]) << 16 | ord($header[5]) << 24
+        ];
+    }
+
+    /**
+     * @param array  $header
+     * @param string $body
+     * @return Frame
+     * @internal
+     */
+    public static function initFrame(array $header, string $body): Frame
+    {
+        // optimize?
+        $options = array_values(unpack('L*', substr($body, 0, $header[1] * 4)));
+        return new self(
+            substr($body, $header[1] * 4),
+            $options ?? [],
+            $header[0]
+        );
     }
 }

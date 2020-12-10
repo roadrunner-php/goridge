@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\RPC\Codec;
 
+use Spiral\Goridge\Frame;
 use Spiral\Goridge\RPC\CodecInterface;
 use Spiral\Goridge\RPC\Exception\CodecException;
 
@@ -22,7 +23,7 @@ final class JsonCodec implements CodecInterface
      */
     public function getIndex(): int
     {
-        return 1;
+        return Frame::CODEC_JSON;
     }
 
     /**

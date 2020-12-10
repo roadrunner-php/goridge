@@ -13,7 +13,7 @@ namespace Spiral\Goridge\RPC;
 use Spiral\Goridge\Exception\GoridgeException;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\RelayInterface as Relay;
-use Spiral\Goridge\RPC\Codec\RawCodec;
+use Spiral\Goridge\RPC\Codec\JsonCodec;
 use Spiral\Goridge\RPC\Exception\RPCException;
 use Spiral\Goridge\StringableRelayInterface;
 
@@ -33,7 +33,7 @@ class RPC implements RPCInterface
     public function __construct(Relay $relay, CodecInterface $codec = null)
     {
         $this->relay = $relay;
-        $this->codec = $codec ?? new RawCodec();
+        $this->codec = $codec ?? new JsonCodec();
     }
 
     /**
@@ -75,50 +75,43 @@ class RPC implements RPCInterface
      */
     public function call(string $method, $payload)
     {
-        $this->relay->send(...$this->packRequest($method, $payload));
+        $f = $this->packFrame($method, $payload);
+        print_r($f);
 
-        // wait for the header confirmation
-        $header = $this->relay->waitFrame();
+        $this->relay->send($this->packFrame($method, $payload));
 
-        if (!($header->flags & Frame::CONTROL)) {
-            throw new Exception\RPCException('rpc response header is missing');
+        // wait for the frame confirmation
+        $frame = $this->relay->waitFrame();
+print_r($frame);
+        if (count($frame->options) !== 2) {
+            throw new Exception\RPCException('invalid RPC frame, options missing');
         }
 
-        $rpc = unpack('Ps', substr($header->body, -8));
-        $rpc['m'] = substr($header->body, 0, -8);
-
-        if ($rpc['m'] !== $method || $rpc['s'] !== self::$seq) {
-            throw new Exception\RPCException(
-                sprintf(
-                    'rpc method call, expected %s:%d, got %s%d',
-                    $method,
-                    self::$seq,
-                    $rpc['m'],
-                    $rpc['s']
-                )
-            );
+        if ($frame->options[0] !== self::$seq) {
+            throw new Exception\RPCException('invalid RPC frame, sequence mismatch');
         }
 
         self::$seq++;
 
-        $response = $this->relay->waitFrame();
-
-        return $this->decodeResponse($response->body, $response->flags);
+        return $this->decodeResponse($frame);
     }
 
     /**
-     * @param string $body
-     * @param int    $flags
+     * @param Frame $frame
      * @return mixed
      *
      * @throws Exception\ServiceException
      */
-    private function decodeResponse(string $body, int $flags)
+    private function decodeResponse(Frame $frame)
     {
-        if ($flags & Frame::ERROR) {
+        // exclude method name
+        $body = substr($frame->payload, $frame->options[1]);
+
+        if ($frame->hasFlag(Frame::ERROR)) {
             throw new Exception\ServiceException(
                 sprintf(
-                    "error '$body' on '%s'",
+                    "error '%s' on %s",
+                    $body,
                     $this->relay instanceof StringableRelayInterface ? (string) $this->relay : get_class($this->relay)
                 )
             );
@@ -132,16 +125,17 @@ class RPC implements RPCInterface
      * @param mixed  $payload
      * @return Frame
      */
-    private function packRequest(string $method, $payload): array
+    private function packFrame(string $method, $payload): Frame
     {
         if ($this->service !== null) {
             $method = $this->service . '.' . ucfirst($method);
         }
 
-        return [
-            new Frame($method, pack('P', self::$seq), Frame::CONTROL),
-            new Frame($this->codec->encode($payload), null, Frame::CONTROL | $this->codec->getIndex())
-        ];
+        return new Frame(
+            $method . $this->codec->encode($payload),
+            [self::$seq, strlen($method)],
+            $this->codec->getIndex()
+        );
     }
 
     /**

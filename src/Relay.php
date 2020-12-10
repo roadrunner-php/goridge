@@ -103,15 +103,4 @@ abstract class Relay implements RelayInterface
             );
         }
     }
-
-    /**
-     * @param Frame $message
-     * @return string
-     */
-    protected static function packFrame(Frame $message): string
-    {
-        $size = $message->body === null ? 0 : strlen($message->body);
-
-        return pack('CPJ', $message->flags, $size, $size) . $message->body;
-    }
 }

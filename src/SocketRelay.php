@@ -146,50 +146,52 @@ class SocketRelay extends Relay implements StringableRelayInterface
     {
         $this->connect();
 
-        $msg = new Frame(null, null, 0);
-
-        // todo: implement new protocol
-        $prefix = $this->fetchPrefix();
-        $msg->flags = $prefix['flags'];
-
-        if ($prefix['size'] !== 0) {
-            $msg->body = '';
-            $readBytes = $prefix['size'];
-
-            //Add ability to write to stream in a future
-            while ($readBytes > 0) {
-                $bufferLength = socket_recv(
-                    $this->socket,
-                    $buffer,
-                    min(self::BUFFER_SIZE, $readBytes),
-                    MSG_WAITALL
-                );
-                if ($bufferLength === false || $buffer === null) {
-                    throw new Exception\PrefixException(sprintf(
-                        'unable to read prefix from socket: %s',
-                        socket_strerror(socket_last_error($this->socket))
-                    ));
-                }
-
-                $msg->body .= $buffer;
-                $readBytes -= $bufferLength;
-            }
+        $header = '';
+        $headerLength = socket_recv($this->socket, $header, 8, MSG_WAITALL);
+        if ($header === null || $headerLength !== 8) {
+            throw new Exception\HeaderException(sprintf(
+                'unable to read frame header: %s',
+                socket_strerror(socket_last_error($this->socket))
+            ));
         }
 
-        return $msg;
+        $parts = Frame::readHeader($header);
+
+        // total payload length
+        $payload = '';
+        $length = $parts[1] * 4 + $parts[2];
+
+        while ($length > 0) {
+            $bufferLength = socket_recv(
+                $this->socket,
+                $buffer,
+                min(self::BUFFER_SIZE, $length),
+                MSG_WAITALL
+            );
+
+            if ($bufferLength === false || $buffer === null) {
+                throw new Exception\HeaderException(sprintf(
+                    'unable to read payload from socket: %s',
+                    socket_strerror(socket_last_error($this->socket))
+                ));
+            }
+
+            $payload .= $buffer;
+            $length -= $bufferLength;
+        }
+
+
+        return Frame::initFrame($parts, $payload);
     }
 
     /**
-     * @param Frame ...$frame
+     * @param Frame $frame
      */
-    public function send(Frame ...$frame): void
+    public function send(Frame $frame): void
     {
         $this->connect();
 
-        $body = '';
-        foreach ($frame as $f) {
-            $body = self::packFrame($f);
-        }
+        $body = Frame::packFrame($frame);
 
         if (socket_send($this->socket, $body, strlen($body), 0) === false) {
             throw new Exception\TransportException('unable to write payload to the stream');
@@ -244,34 +246,6 @@ class SocketRelay extends Relay implements StringableRelayInterface
         socket_close($this->socket);
         $this->connected = false;
         unset($this->socket);
-    }
-
-    /**
-     * @return array Prefix [flag, length]
-     *
-     * @throws Exception\PrefixException
-     */
-    private function fetchPrefix(): array
-    {
-        $prefixLength = socket_recv($this->socket, $prefixBody, 17, MSG_WAITALL);
-        if ($prefixBody === null || $prefixLength !== 17) {
-            throw new Exception\PrefixException(sprintf(
-                'unable to read prefix from socket: %s',
-                socket_strerror(socket_last_error($this->socket))
-            ));
-        }
-
-        // todo: update protocol
-        $result = unpack('Cflags/Psize/Jrevs', $prefixBody);
-        if (!is_array($result)) {
-            throw new Exception\PrefixException('invalid prefix');
-        }
-
-        if ($result['size'] !== $result['revs']) {
-            throw new Exception\PrefixException('invalid prefix (checksum)');
-        }
-
-        return $result;
     }
 
     /**

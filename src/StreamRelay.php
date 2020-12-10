@@ -63,69 +63,40 @@ class StreamRelay extends Relay
      */
     public function waitFrame(): ?Frame
     {
-        // todo: implement new protocol
-        $msg = new Frame(null, null, 0);
-
-        $prefix = $this->fetchPrefix();
-        $msg->flags = $prefix['flags'];
-
-        if ($prefix['size'] !== 0) {
-            $msg->body = '';
-            $leftBytes = $prefix['size'];
-
-            //Add ability to write to stream in a future
-            while ($leftBytes > 0) {
-                $buffer = fread($this->in, min($leftBytes, self::BUFFER_SIZE));
-                if ($buffer === false) {
-                    throw new Exception\TransportException('error reading payload from the stream');
-                }
-
-                $msg->body .= $buffer;
-                $leftBytes -= strlen($buffer);
-            }
+        $header = fread($this->in, 8);
+        if ($header === false || strlen($header) !== 8) {
+            throw new Exception\HeaderException('unable to read frame header');
         }
 
-        return $msg;
+        $parts = Frame::readHeader($header);
+
+        // total payload length
+        $payload = '';
+        $length = $parts[1] * 4 + $parts[2];
+
+        while ($length > 0) {
+            $buffer = fread($this->in, min($length, self::BUFFER_SIZE));
+            if ($buffer === false) {
+                throw new Exception\TransportException('error reading payload from the stream');
+            }
+
+            $payload .= $buffer;
+            $length -= strlen($buffer);
+        }
+
+        return Frame::initFrame($parts, $payload);
     }
 
     /**
-     * @param Frame ...$frame
+     * @param Frame $frame
      */
-    public function send(Frame ...$frame): void
+    public function send(Frame $frame): void
     {
-        $body = '';
-        foreach ($frame as $f) {
-            $body = self::packFrame($f);
-        }
+        $body = Frame::packFrame($frame);
 
         if (fwrite($this->out, $body, strlen($body)) === false) {
             throw new Exception\TransportException('unable to write payload to the stream');
         }
-    }
-
-    /**
-     * @return array Prefix [flag, length]
-     *
-     * @throws Exception\PrefixException
-     */
-    private function fetchPrefix(): array
-    {
-        // todo: update protocol
-        $prefixBody = fread($this->in, 17);
-        if ($prefixBody === false) {
-            throw new Exception\PrefixException('unable to read prefix from the stream');
-        }
-
-        $result = unpack('Cflags/Psize/Jrevs', $prefixBody);
-        if (!is_array($result)) {
-            throw new Exception\PrefixException('invalid prefix');
-        }
-
-        if ($result['size'] !== $result['revs']) {
-            throw new Exception\PrefixException('invalid prefix (checksum)');
-        }
-
-        return $result;
     }
 
     /**

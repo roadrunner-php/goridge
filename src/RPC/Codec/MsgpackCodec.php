@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Spiral\Goridge\RPC\Codec;
 
 use MessagePack\MessagePack;
+use Spiral\Goridge\Frame;
 use Spiral\Goridge\RPC\CodecInterface;
 
 final class MsgpackCodec implements CodecInterface
@@ -33,7 +34,7 @@ final class MsgpackCodec implements CodecInterface
      */
     public function getIndex(): int
     {
-        return 2;
+        return Frame::CODEC_MSGPACK;
     }
 
     /**

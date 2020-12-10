@@ -21,7 +21,7 @@ interface RelayInterface
     public function waitFrame(): ?Frame;
 
     /**
-     * @param Frame ...$frame
+     * @param Frame $frame
      */
-    public function send(Frame ...$frame): void;
+    public function send(Frame $frame): void;
 }
