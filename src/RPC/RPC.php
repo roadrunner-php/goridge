@@ -75,14 +75,11 @@ class RPC implements RPCInterface
      */
     public function call(string $method, $payload)
     {
-        $f = $this->packFrame($method, $payload);
-        print_r($f);
-
         $this->relay->send($this->packFrame($method, $payload));
 
         // wait for the frame confirmation
         $frame = $this->relay->waitFrame();
-print_r($frame);
+
         if (count($frame->options) !== 2) {
             throw new Exception\RPCException('invalid RPC frame, options missing');
         }
