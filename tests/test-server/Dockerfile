@@ -1,5 +1,5 @@
 # Image page: <https://hub.docker.com/_/golang>
-FROM golang:1.14-alpine as builder
+FROM golang:1.15-alpine as builder
 
 # Copy server sources into image
 COPY ./go.mod ./go.sum ./server.go /src/
