@@ -65,6 +65,12 @@ abstract class RPCTest extends TestCase
         $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
     }
 
+    public function testPrefixPingPong(): void
+    {
+        $conn = $this->makeRPC()->withServicePrefix('Service');
+        $this->assertSame('pong', $conn->call('Ping', 'ping'));
+    }
+
     public function testPingNull(): void
     {
         $conn = $this->makeRPC();
@@ -81,6 +87,20 @@ abstract class RPCTest extends TestCase
     {
         $conn = $this->makeRPC();
         $this->assertSame(10, $conn->call('Service.Negate', -10));
+    }
+
+    public function testInvalidService(): void
+    {
+        $this->expectException(ServiceException::class);
+        $conn = $this->makeRPC()->withServicePrefix('Service2');
+        $this->assertSame('pong', $conn->call('Ping', 'ping'));
+    }
+
+    public function testInvalidMethod(): void
+    {
+        $this->expectException(ServiceException::class);
+        $conn = $this->makeRPC()->withServicePrefix('Service');
+        $this->assertSame('pong', $conn->call('Ping2', 'ping'));
     }
 
     /**
