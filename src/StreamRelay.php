@@ -110,7 +110,11 @@ class StreamRelay extends Relay
     {
         $meta = stream_get_meta_data($stream);
 
-        return in_array($meta['mode'], ['r', 'rb', 'r+', 'rb+', 'w+', 'wb+', 'a+', 'ab+', 'x+', 'c+', 'cb+'], true);
+        return in_array(
+            $meta['mode'],
+            ['r', 'rb', 'r+', 'rb+', 'w+', 'wb+', 'w+b', 'a+', 'ab+', 'x+', 'c+', 'cb+'],
+            true
+        );
     }
 
     /**
