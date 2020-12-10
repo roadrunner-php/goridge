@@ -1,9 +1,13 @@
 CHANGELOG
 =========
 
-## UNRELEASED
-- Go-code removed from current repository
-- Improve CI
+## v3.0.0
+- Full rewamp of protocol, added support for arbitrary options
+- Reduced number of syscalls
+- Added support for multi-codec RPC
+- Support for binary RPC calls
+- 25% performance increase
+- PHP code split from the main Golang repository
 
 ## v2.4.2 (19.05.2020)
 - Add phpstan analyzer
