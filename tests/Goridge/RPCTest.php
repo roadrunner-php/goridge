@@ -25,62 +25,62 @@ abstract class RPCTest extends TestCase
     public const SOCK_PORT = 7079;
     public const SOCK_TYPE = SocketRelay::SOCK_TCP;
 
-    public function testManualConnect(): void
-    {
-        /** @var SocketRelay $relay */
-        $relay = $this->makeRelay();
-        $conn = new RPC($relay);
-
-        $this->assertFalse($relay->isConnected());
-
-        $relay->connect();
-        $this->assertTrue($relay->isConnected());
-
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
-    }
-
-    public function testReconnect(): void
-    {
-        /** @var SocketRelay $relay */
-        $relay = $this->makeRelay();
-        $conn = new RPC($relay);
-
-        $this->assertFalse($relay->isConnected());
-
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
-
-        $relay->close();
-        $this->assertFalse($relay->isConnected());
-
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
-    }
-
-    public function testPingPong(): void
-    {
-        $conn = $this->makeRPC();
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
-    }
-
-    public function testPingNull(): void
-    {
-        $conn = $this->makeRPC();
-        $this->assertSame('', $conn->call('Service.Ping', 'not-ping'));
-    }
-
-    public function testNegate(): void
-    {
-        $conn = $this->makeRPC();
-        $this->assertSame(-10, $conn->call('Service.Negate', 10));
-    }
-
-    public function testNegateNegative(): void
-    {
-        $conn = $this->makeRPC();
-        $this->assertSame(10, $conn->call('Service.Negate', -10));
-    }
+//    public function testManualConnect(): void
+//    {
+//        /** @var SocketRelay $relay */
+//        $relay = $this->makeRelay();
+//        $conn = new RPC($relay);
+//
+//        $this->assertFalse($relay->isConnected());
+//
+//        $relay->connect();
+//        $this->assertTrue($relay->isConnected());
+//
+//        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
+//        $this->assertTrue($relay->isConnected());
+//    }
+//
+//    public function testReconnect(): void
+//    {
+//        /** @var SocketRelay $relay */
+//        $relay = $this->makeRelay();
+//        $conn = new RPC($relay);
+//
+//        $this->assertFalse($relay->isConnected());
+//
+//        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
+//        $this->assertTrue($relay->isConnected());
+//
+//        $relay->close();
+//        $this->assertFalse($relay->isConnected());
+//
+//        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
+//        $this->assertTrue($relay->isConnected());
+//    }
+//
+//    public function testPingPong(): void
+//    {
+//        $conn = $this->makeRPC();
+//        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
+//    }
+//
+//    public function testPingNull(): void
+//    {
+//        $conn = $this->makeRPC();
+//        $this->assertSame('', $conn->call('Service.Ping', 'not-ping'));
+//    }
+//
+//    public function testNegate(): void
+//    {
+//        $conn = $this->makeRPC();
+//        $this->assertSame(-10, $conn->call('Service.Negate', 10));
+//    }
+//
+//    public function testNegateNegative(): void
+//    {
+//        $conn = $this->makeRPC();
+//        $this->assertSame(10, $conn->call('Service.Negate', -10));
+//    }
 
     /**
      * @throws Exception
@@ -89,6 +89,8 @@ abstract class RPCTest extends TestCase
     {
         $conn = $this->makeRPC();
         $payload = base64_encode(random_bytes(65000 * 5));
+
+        echo strlen($payload);
 
         $resp = $conn->call('Service.Echo', $payload);
 
