@@ -23,7 +23,7 @@ class RPC implements RPCInterface
     private CodecInterface $codec;
     private ?string $service = null;
 
-    /** @var positive-int */
+    /** @var int */
     private static int $seq = 1;
 
     /**
