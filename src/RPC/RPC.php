@@ -21,7 +21,7 @@ class RPC implements RPCInterface
 {
     private Relay          $relay;
     private CodecInterface $codec;
-    private ?string        $service;
+    private ?string        $service = null;
 
     /** @var positive-int */
     private static int $seq = 0;

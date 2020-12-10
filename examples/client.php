@@ -16,6 +16,4 @@ $rpc = new Goridge\RPC\RPC(
     Goridge\Relay::create('tcp://127.0.0.1:6001')
 );
 
-$rpc = $rpc->withServicePrefix('App');
-
-echo $rpc->call('Hi', 'Antony');
+echo $rpc->call('App.Hi', 'Antony');
