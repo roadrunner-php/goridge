@@ -42,16 +42,10 @@ jobs:
         run: docker build --tag test-server:local -f ./tests/test-server/Dockerfile ./tests/test-server
 
       - name: Start test server
-        run: docker run --rm -d -p "7079:7079/tcp" test-server:local
-
-      - name: Check running containers 1
-        run: docker ps -a
+        run: docker run --name test-server --rm -d -p "7079:7079/tcp" test-server:local
 
       - name: Run tests
         run: composer test-cover
-
-      - name: Check running containers 2
-        run: docker ps -a
 
       - uses: codecov/codecov-action@v1 # Docs: <https://github.com/codecov/codecov-action>
         with:
