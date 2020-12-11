@@ -56,6 +56,8 @@ github.com/spiral/goridge/v3 v3.0.0-beta1 h1:niU5XgVDP8guiyDqGfK9b69sMAvwZvp2SYX
 github.com/spiral/goridge/v3 v3.0.0-beta1/go.mod h1:Z0C0JaSf+4ZRU3FaQHmmO/0PhdpHK84Do/NVa9/ivBE=
 github.com/spiral/goridge/v3 v3.0.0-beta2 h1:sHRsf78UMlvyDhgMgCnxpkE6C2j+xdqlZIFLXQTA9SQ=
 github.com/spiral/goridge/v3 v3.0.0-beta2/go.mod h1:Z0C0JaSf+4ZRU3FaQHmmO/0PhdpHK84Do/NVa9/ivBE=
+github.com/spiral/goridge/v3 v3.0.0-beta5 h1:W+7OPlrHg4f0cC0PiDaHKFAPSAFpeobd8BnO+w+4luo=
+github.com/spiral/goridge/v3 v3.0.0-beta5/go.mod h1:wrmD6TBu/RdOkJowCy0lIyXEoEucIVXd2yCgYZx9voI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=

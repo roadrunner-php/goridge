@@ -17,15 +17,15 @@ final class Frame
     // Current protocol version.
     public const VERSION = 0x01;
 
+    // Frame type
+    public const CONTROL = 0x01;
+    public const ERROR   = 0x40;
+
     // BYTE flags, it means, that we can set multiply flags from this group using bitwise OR
     public const CODEC_RAW     = 0x04;
     public const CODEC_JSON    = 0x08;
     public const CODEC_MSGPACK = 0x10;
     public const CODEC_GOB     = 0x20;
-
-    // Frame type
-    public const CONTROL = 0x01;
-    public const ERROR   = 0x40;
 
     /** @var string|null */
     public ?string $payload;
@@ -92,16 +92,15 @@ final class Frame
     {
         $header = pack(
             'CCL',
-            self::VERSION << 4 | (count($frame->options) + 2),
+            self::VERSION << 4 | (count($frame->options) + 3),
             $frame->flags,
             strlen((string) $frame->payload)
         );
 
-        if ($frame->options === []) {
-            $header .= pack('CC', CRC8::calculate($header), 0);
+        if ($frame->options !== []) {
+            $header .= pack('LCCL*', crc32($header), 0, 0, ...$frame->options);
         } else {
-            $header .= pack('CCL*', 0, 0, ...$frame->options);
-            $header[6] = chr(CRC8::calculate($header));
+            $header .= pack('LCC', crc32($header), 0, 0);
         }
 
         return $header . (string) $frame->payload;
@@ -118,7 +117,7 @@ final class Frame
     {
         return [
             ord($header[1]),
-            (ord($header[0]) & 0x0F) - 2,
+            (ord($header[0]) & 0x0F) - 3,
             ord($header[2]) | ord($header[3]) << 8 | ord($header[4]) << 16 | ord($header[5]) << 24
         ];
     }

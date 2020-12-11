@@ -149,8 +149,8 @@ class SocketRelay extends Relay implements StringableRelayInterface
         $this->connect();
 
         $header = '';
-        $headerLength = socket_recv($this->socket, $header, 8, MSG_WAITALL);
-        if ($header === null || $headerLength !== 8) {
+        $headerLength = socket_recv($this->socket, $header, 12, MSG_WAITALL);
+        if ($header === null || $headerLength !== 12) {
             throw new Exception\HeaderException(sprintf(
                 'unable to read frame header: %s',
                 socket_strerror(socket_last_error($this->socket))

@@ -66,8 +66,8 @@ class StreamRelay extends Relay
      */
     public function waitFrame(): Frame
     {
-        $header = fread($this->in, 8);
-        if ($header === false || strlen($header) !== 8) {
+        $header = fread($this->in, 12);
+        if ($header === false || strlen($header) !== 12) {
             throw new Exception\HeaderException('unable to read frame header');
         }
 
