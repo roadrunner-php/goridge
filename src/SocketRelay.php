@@ -177,7 +177,6 @@ class SocketRelay extends Relay implements StringableRelayInterface
             $length -= $bufferLength;
         }
 
-
         return Frame::initFrame($parts, $payload);
     }
 
