@@ -14,9 +14,9 @@ use Throwable;
 
 abstract class Relay implements RelayInterface
 {
-    public const TCP_SOCKET  = 'tcp';
+    public const TCP_SOCKET = 'tcp';
     public const UNIX_SOCKET = 'unix';
-    public const STREAM      = 'pipes';
+    public const PIPES = 'pipes';
     protected const CONNECTION_EXP = '/(?P<protocol>[^:\/]+):\/\/(?P<arg1>[^:]+)(:(?P<arg2>[^:]+))?/';
 
     /**
@@ -33,6 +33,10 @@ abstract class Relay implements RelayInterface
      */
     public static function create(string $connection): RelayInterface
     {
+        if ($connection === self::PIPES) {
+            return new StreamRelay(STDIN, STDOUT);
+        }
+
         if (!preg_match(self::CONNECTION_EXP, strtolower($connection), $match)) {
             throw new Exception\RelayFactoryException('unsupported connection format');
         }
@@ -43,11 +47,11 @@ abstract class Relay implements RelayInterface
             case self::UNIX_SOCKET:
                 return new SocketRelay(
                     $match['arg1'],
-                    isset($match['arg2']) ? (int) $match['arg2'] : null,
+                    isset($match['arg2']) ? (int)$match['arg2'] : null,
                     $match['protocol'] === self::TCP_SOCKET ? SocketRelay::SOCK_TCP : SocketRelay::SOCK_UNIX
                 );
 
-            case self::STREAM:
+            case self::PIPES:
                 if (!isset($match['arg2'])) {
                     throw new Exception\RelayFactoryException('unsupported stream connection format');
                 }
