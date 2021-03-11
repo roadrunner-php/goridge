@@ -10,10 +10,13 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge;
 
-interface StringableRelayInterface
+/**
+ * @deprecated Please use "$relay instanceof \Stringable" assertion instead.
+ */
+interface StringableRelayInterface extends \Stringable
 {
     /**
-     * @return string
+     * {@inheritDoc}
      */
     public function __toString(): string;
 }
