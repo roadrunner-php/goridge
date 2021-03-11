@@ -1,38 +1,44 @@
 {
-  "name": "spiral/goridge",
-  "type": "goridge",
-  "description": "High-performance PHP-to-Golang RPC bridge",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Anton Titov / Wolfy-J",
-      "email": "wolfy.jd@gmail.com"
+    "name": "spiral/goridge",
+    "type": "goridge",
+    "description": "High-performance PHP-to-Golang RPC bridge",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Anton Titov / Wolfy-J",
+            "email": "wolfy.jd@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "ext-json": "*",
+        "ext-sockets": "*",
+        "symfony/polyfill-php80": "^1.22"
+    },
+    "require-dev": {
+        "vimeo/psalm": "^4.6",
+        "spiral/code-style": "^1.0",
+        "rybakit/msgpack": "^0.7.1",
+        "phpunit/phpunit": "^8.0",
+        "jetbrains/phpstorm-attributes": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Spiral\\Goridge\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Spiral\\Goridge\\Tests\\": "tests/Goridge"
+        }
+    },
+    "suggest": {
+        "ext-msgpack": "MessagePack codec support",
+        "rybakit/msgpack": "(^0.7) MessagePack codec support"
+    },
+    "scripts": {
+        "test": "phpunit --no-coverage --colors=always",
+        "test-cover": "phpunit --coverage-clover=coverage.xml",
+        "analyze": "psalm"
     }
-  ],
-  "require": {
-    "php": ">=7.4",
-    "ext-json": "*",
-    "ext-sockets": "*"
-  },
-  "require-dev": {
-    "spiral/code-style": "^1.0",
-    "rybakit/msgpack": "^0.7.1",
-    "phpunit/phpunit": "~8.0",
-    "phpstan/phpstan": "~0.12.34"
-  },
-  "autoload": {
-    "psr-4": {
-      "Spiral\\Goridge\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Spiral\\Goridge\\Tests\\": "tests/Goridge/"
-    }
-  },
-  "scripts": {
-    "test": "@php ./vendor/bin/phpunit --no-coverage --colors=always",
-    "test-cover": "@php ./vendor/bin/phpunit --coverage-clover=coverage.xml",
-    "analyze": "phpstan analyze -c ./phpstan.neon.dist --no-progress --ansi"
-  }
 }
