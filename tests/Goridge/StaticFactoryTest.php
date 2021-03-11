@@ -46,21 +46,21 @@ class StaticFactoryTest extends TestCase
     public function formatProvider(): iterable
     {
         return [
-            //format invalid
+            // format invalid
             ['tcp:localhost:', true],
             ['tcp:/localhost:', true],
             ['tcp//localhost:', true],
             ['tcp//localhost', true],
-            //unknown provider
+            // unknown provider
             ['test://localhost', true],
-            //pipes require 2 args
+            // pipes require 2 args
             ['pipes://localhost:', true],
             ['pipes://localhost', true],
-            //invalid resources
+            // invalid resources
             ['pipes://stdin:test', true],
             ['pipes://test:stdout', true],
             ['pipes://test:test', true],
-            //valid format
+            // valid format
             ['tcp://localhost'],
             ['tcp://localhost:123'],
             ['unix://localhost:123'],
@@ -68,6 +68,10 @@ class StaticFactoryTest extends TestCase
             ['unix:///tmp/rpc.sock'],
             ['tcp://localhost:abc'],
             ['pipes://stdin:stdout'],
+            // in different register
+            ['UnIx:///tmp/RPC.sock'],
+            ['TCP://Domain.com:42'],
+            ['PIPeS://stdIn:stdErr'],
         ];
     }
 

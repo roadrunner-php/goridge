@@ -39,8 +39,10 @@ class SocketRelay extends Relay implements StringableRelayInterface
 
     /**
      * Example:
-     * $relay = new SocketRelay("localhost", 7000);
-     * $relay = new SocketRelay("/tmp/rpc.sock", null, Socket::UNIX_SOCKET);
+     * <code>
+     *  $relay = new SocketRelay("localhost", 7000);
+     *  $relay = new SocketRelay("/tmp/rpc.sock", null, Socket::UNIX_SOCKET);
+     * </code>
      *
      * @param string   $address Localhost, ip address or hostname.
      * @param int|null $port    Ignored for UNIX sockets.
@@ -56,6 +58,9 @@ class SocketRelay extends Relay implements StringableRelayInterface
 
         switch ($type) {
             case self::SOCK_TCP:
+                // TCP address should always be in lowercase
+                $address = strtolower($address);
+
                 if ($port === null) {
                     throw new Exception\InvalidArgumentException(sprintf(
                         "no port given for TPC socket on '%s'",
@@ -70,9 +75,11 @@ class SocketRelay extends Relay implements StringableRelayInterface
                     ));
                 }
                 break;
+
             case self::SOCK_UNIX:
                 $port = null;
                 break;
+
             default:
                 throw new Exception\InvalidArgumentException(sprintf(
                     "undefined connection type %s on '%s'",
