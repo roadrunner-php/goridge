@@ -37,19 +37,25 @@ abstract class Relay implements RelayInterface
             return new StreamRelay(STDIN, STDOUT);
         }
 
-        if (!preg_match(self::CONNECTION_EXP, strtolower($connection), $match)) {
+        if (!preg_match(self::CONNECTION_EXP, $connection, $match)) {
             throw new Exception\RelayFactoryException('unsupported connection format');
         }
 
-        switch ($match['protocol']) {
+        $protocol = strtolower($match['protocol']);
+
+        switch ($protocol) {
             case self::TCP_SOCKET:
                 //fall through
             case self::UNIX_SOCKET:
-                return new SocketRelay(
-                    $match['arg1'],
-                    isset($match['arg2']) ? (int)$match['arg2'] : null,
-                    $match['protocol'] === self::TCP_SOCKET ? SocketRelay::SOCK_TCP : SocketRelay::SOCK_UNIX
-                );
+                $socketType = $protocol === self::TCP_SOCKET
+                    ? SocketRelay::SOCK_TCP
+                    : SocketRelay::SOCK_UNIX;
+
+                $port = isset($match['arg2'])
+                    ? (int)$match['arg2']
+                    : null;
+
+                return new SocketRelay($match['arg1'], $port, $socketType);
 
             case self::PIPES:
                 if (!isset($match['arg2'])) {
