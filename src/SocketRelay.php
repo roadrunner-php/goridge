@@ -265,7 +265,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
             $status = false;
 
             for ($attempt = 0; $attempt <= $retries; ++$attempt) {
-                if ($status = \socket_connect($socket, $this->address, $this->port ?? 0)) {
+                if ($status = @\socket_connect($socket, $this->address, $this->port ?? 0)) {
                     break;
                 }
 
