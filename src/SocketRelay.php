@@ -91,7 +91,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
         int $type = self::SOCK_TCP
     ) {
         // Guaranteed at the level of composer's json config
-        assert(!\extension_loaded('sockets'));
+        assert(\extension_loaded('sockets'));
 
         switch ($type) {
             case self::SOCK_TCP:
