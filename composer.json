@@ -40,5 +40,12 @@
         "test": "phpunit --no-coverage --colors=always",
         "test-cover": "phpunit --coverage-clover=coverage.xml",
         "analyze": "psalm"
-    }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "3.1.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
