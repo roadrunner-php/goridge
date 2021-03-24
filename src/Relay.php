@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge;
 
-use Throwable;
+use Spiral\Goridge\Exception\RelayFactoryException;
 
 abstract class Relay implements RelayInterface
 {
@@ -55,14 +55,16 @@ abstract class Relay implements RelayInterface
                     ? (int)$match['arg2']
                     : null;
 
+                /** @psalm-suppress ArgumentTypeCoercion Reason: Checked in the SocketRelay constructor */
                 return new SocketRelay($match['arg1'], $port, $socketType);
 
             case self::PIPES:
                 if (!isset($match['arg2'])) {
-                    throw new Exception\RelayFactoryException('unsupported stream connection format');
+                    throw new RelayFactoryException('Unsupported stream connection format');
                 }
 
                 return new StreamRelay(self::openIn($match['arg1']), self::openOut($match['arg2']));
+
             default:
                 throw new Exception\RelayFactoryException('unknown connection protocol');
         }
@@ -74,20 +76,13 @@ abstract class Relay implements RelayInterface
      */
     private static function openIn(string $input)
     {
-        try {
-            $resource = fopen("php://$input", 'rb');
-            if ($resource === false) {
-                throw new Exception\RelayFactoryException('could not initiate `in` stream resource');
-            }
+        $resource = @\fopen("php://$input", 'rb');
 
-            return $resource;
-        } catch (Throwable $e) {
-            throw new Exception\RelayFactoryException(
-                'could not initiate `in` stream resource',
-                $e->getCode(),
-                $e
-            );
+        if ($resource === false) {
+            throw new RelayFactoryException('Could not initiate input stream resource');
         }
+
+        return $resource;
     }
 
     /**
@@ -96,19 +91,12 @@ abstract class Relay implements RelayInterface
      */
     private static function openOut(string $output)
     {
-        try {
-            $resource = fopen("php://$output", 'wb');
-            if ($resource === false) {
-                throw new Exception\RelayFactoryException('could not initiate `out` stream resource');
-            }
+        $resource = @\fopen("php://$output", 'wb');
 
-            return $resource;
-        } catch (Throwable $e) {
-            throw new Exception\RelayFactoryException(
-                'could not initiate `out` stream resource',
-                $e->getCode(),
-                $e
-            );
+        if ($resource === false) {
+            throw new RelayFactoryException('could not initiate output stream resource');
         }
+
+        return $resource;
     }
 }

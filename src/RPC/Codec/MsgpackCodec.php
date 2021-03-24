@@ -14,9 +14,22 @@ use MessagePack\MessagePack;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\RPC\CodecInterface;
 
+/**
+ * @psalm-type PackHandler = \Closure(mixed): string
+ * @psalm-type UnpackHandler = \Closure(string): mixed
+ */
 final class MsgpackCodec implements CodecInterface
 {
+    /**
+     * @var PackHandler
+     * @psalm-suppress PropertyNotSetInConstructor Reason: Initialized via private method
+     */
     private \Closure $pack;
+
+    /**
+     * @var UnpackHandler
+     * @psalm-suppress PropertyNotSetInConstructor Reason: Initialized via private method
+     */
     private \Closure $unpack;
 
     /**
@@ -60,22 +73,30 @@ final class MsgpackCodec implements CodecInterface
      */
     private function initPacker(): void
     {
-        if (function_exists('msgpack_pack') && function_exists('msgpack_unpack')) {
-            $this->pack = static function ($payload) {
+        // Is native extension supported
+        if (\function_exists('msgpack_pack') && \function_exists('msgpack_unpack')) {
+            $this->pack = static function ($payload): string {
                 return msgpack_pack($payload);
             };
 
-            $this->unpack = static function ($payload) {
+            $this->unpack = static function (string $payload) {
                 return msgpack_unpack($payload);
             };
-        } else {
-            $this->pack = static function ($payload) {
+
+            return;
+        }
+
+        // Is composer's library supported
+        if (\class_exists(MessagePack::class)) {
+            $this->pack = static function ($payload): string {
                 return MessagePack::pack($payload);
             };
 
-            $this->unpack = static function ($payload) {
+            $this->unpack = static function (string $payload) {
                 return MessagePack::unpack($payload);
             };
         }
+
+        throw new \LogicException('Could not initialize codec, please install msgpack extension or library');
     }
 }

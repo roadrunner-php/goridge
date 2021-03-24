@@ -12,34 +12,66 @@ namespace Spiral\Goridge;
 
 use Spiral\Goridge\Exception\InvalidArgumentException;
 
+/**
+ * @psalm-type FrameVersion = Frame::VERSION
+ * @psalm-type FrameType = Frame::CONTROL | Frame::ERROR
+ * @psalm-type FrameCodec = Frame::CODEC_*
+ * @psalm-type FrameCodecValue = int-mask-of<FrameCodec>
+ */
 final class Frame
 {
-    // Current protocol version.
+    /**
+     * Current protocol version.
+     *
+     * @var positive-int
+     */
     public const VERSION = 0x01;
 
-    // Frame type
+    /**
+     * Control frame type
+     *
+     * @var positive-int
+     */
     public const CONTROL = 0x01;
-    public const ERROR   = 0x40;
 
-    // BYTE flags, it means, that we can set multiply flags from this group using bitwise OR
+    /**
+     * Error frame type
+     *
+     * @var positive-int
+     */
+    public const ERROR = 0x40;
+
+    /**#@+
+     * BYTE flags, it means, that we can set multiply flags from this group
+     * using bitwise OR.
+     *
+     * @var positive-int
+     */
     public const CODEC_RAW     = 0x04;
     public const CODEC_JSON    = 0x08;
     public const CODEC_MSGPACK = 0x10;
     public const CODEC_GOB     = 0x20;
+    /**#@-*/
 
-    /** @var string|null */
+    /**
+     * @var string|null
+     */
     public ?string $payload;
 
-    /** @var array<int> */
+    /**
+     * @var array<int>
+     */
     public array $options = [];
 
-    /** @var int */
+    /**
+     * @var int
+     */
     public int $flags;
 
     /**
      * @param string|null $body
-     * @param array<int>  $options
-     * @param int         $flags
+     * @param array<int> $options
+     * @param int $flags
      */
     public function __construct(?string $body, array $options = [], int $flags = 0)
     {
@@ -94,7 +126,7 @@ final class Frame
             'CCL',
             self::VERSION << 4 | (count($frame->options) + 3),
             $frame->flags,
-            strlen((string) $frame->payload)
+            strlen((string)$frame->payload)
         );
 
         if ($frame->options !== []) {
@@ -103,39 +135,41 @@ final class Frame
             $header .= pack('LCC', crc32($header), 0, 0);
         }
 
-        return $header . (string) $frame->payload;
+        return $header . (string)$frame->payload;
     }
 
     /**
      * Parse header and return [flags, num options, payload length].
      *
      * @param string $header 8 bytes.
-     * @return array<int>
+     * @return array{0: int, 1: int, 2: int}
      * @internal
      */
     public static function readHeader(string $header): array
     {
         return [
-            ord($header[1]),
-            (ord($header[0]) & 0x0F) - 3,
-            ord($header[2]) | ord($header[3]) << 8 | ord($header[4]) << 16 | ord($header[5]) << 24
+            \ord($header[1]),
+            (\ord($header[0]) & 0x0F) - 3,
+            \ord($header[2]) | \ord($header[3]) << 8 | \ord($header[4]) << 16 | \ord($header[5]) << 24,
         ];
     }
 
     /**
      * @param array<int> $header
-     * @param string     $body
+     * @param string $body
      * @return Frame
      * @internal
      */
     public static function initFrame(array $header, string $body): Frame
     {
-        // optimize?
-        $options = array_values(unpack('L*', substr($body, 0, $header[1] * 4)));
-        return new self(
-            substr($body, $header[1] * 4),
-            $options ?? [],
-            $header[0]
-        );
+        assert(count($header) >= 2);
+
+        /**
+         * optimize?
+         * @var array<int> $options
+         */
+        $options = \array_values(\unpack('L*', \substr($body, 0, $header[1] * 4)));
+
+        return new self(\substr($body, $header[1] * 4), $options, $header[0]);
     }
 }
