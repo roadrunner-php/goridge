@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Goridge;
 
-use PHPStan\Testing\TestCase;
+use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\StreamRelay;
 
