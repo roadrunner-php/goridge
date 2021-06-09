@@ -66,6 +66,8 @@ final class MsgpackCodec implements CodecInterface
 
     /**
      * Init pack and unpack functions.
+     *
+     * @psalm-suppress MixedArgument
      */
     private function initPacker(): void
     {

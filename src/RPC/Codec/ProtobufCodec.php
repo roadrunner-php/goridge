@@ -49,6 +49,9 @@ final class ProtobufCodec implements CodecInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @psalm-suppress MixedInferredReturnType
+     * @psalm-suppress MixedReturnStatement
      */
     public function encode($payload): string
     {
@@ -60,6 +63,8 @@ final class ProtobufCodec implements CodecInterface
     }
 
     /**
+     * @psalm-suppress UnsafeInstantiation
+     *
      * @param class-string<Message> $class
      * @return Message
      */
