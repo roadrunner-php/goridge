@@ -51,6 +51,7 @@ final class Frame
     public const CODEC_JSON    = 0x08;
     public const CODEC_MSGPACK = 0x10;
     public const CODEC_GOB     = 0x20;
+    public const CODEC_PROTO   = 0x80;
     /**#@-*/
 
     /**
