@@ -78,7 +78,7 @@ class RPC implements RPCInterface
     /**
      * {@inheritDoc}
      */
-    public function call(string $method, $payload)
+    public function call(string $method, $payload, $options = null)
     {
         $this->relay->send($this->packFrame($method, $payload));
 
@@ -95,7 +95,7 @@ class RPC implements RPCInterface
 
         self::$seq++;
 
-        return $this->decodeResponse($frame);
+        return $this->decodeResponse($frame, $options);
     }
 
     /**
@@ -112,11 +112,12 @@ class RPC implements RPCInterface
 
     /**
      * @param Frame $frame
+     * @param mixed|null $options
      * @return mixed
      *
      * @throws Exception\ServiceException
      */
-    private function decodeResponse(Frame $frame)
+    private function decodeResponse(Frame $frame, $options = null)
     {
         // exclude method name
         $body = \substr((string)$frame->payload, $frame->options[1]);
@@ -127,7 +128,7 @@ class RPC implements RPCInterface
             throw new ServiceException(\sprintf("Error '%s' on %s", $body, $name));
         }
 
-        return $this->codec->decode($body);
+        return $this->codec->decode($body, $options);
     }
 
     /**

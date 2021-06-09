@@ -17,9 +17,7 @@ use Spiral\Goridge\RPC\Exception\CodecException;
 final class JsonCodec implements CodecInterface
 {
     /**
-     * Coded index, uniquely identified by remote server.
-     *
-     * @return int
+     * {@inheritDoc}
      */
     public function getIndex(): int
     {
@@ -43,10 +41,16 @@ final class JsonCodec implements CodecInterface
     /**
      * {@inheritDoc}
      */
-    public function decode(string $payload)
+    public function decode(string $payload, $options = null)
     {
         try {
-            return \json_decode($payload, true, 512, \JSON_THROW_ON_ERROR);
+            $flags = \JSON_THROW_ON_ERROR;
+
+            if (\is_int($options)) {
+                $flags |= $options;
+            }
+
+            return \json_decode($payload, true, 512, $flags);
         } catch (\JsonException $e) {
             throw new CodecException(\sprintf('Json decode: %s', $e->getMessage()), (int)$e->getCode(), $e);
         }

@@ -17,9 +17,7 @@ use Spiral\Goridge\RPC\Exception\CodecException;
 final class RawCodec implements CodecInterface
 {
     /**
-     * Coded index, uniquely identified by remote server.
-     *
-     * @return int
+     * {@inheritDoc}
      */
     public function getIndex(): int
     {
@@ -27,8 +25,7 @@ final class RawCodec implements CodecInterface
     }
 
     /**
-     * @param mixed $payload
-     * @return string
+     * {@inheritDoc}
      */
     public function encode($payload): string
     {
@@ -42,10 +39,9 @@ final class RawCodec implements CodecInterface
     }
 
     /**
-     * @param string $payload
-     * @return mixed
+     * {@inheritDoc}
      */
-    public function decode(string $payload)
+    public function decode(string $payload, $options = null)
     {
         return $payload;
     }

@@ -33,8 +33,9 @@ interface CodecInterface
 
     /**
      * @param string $payload
+     * @param mixed|null $options
      * @return mixed
      * @throws CodecException
      */
-    public function decode(string $payload);
+    public function decode(string $payload, $options = null);
 }

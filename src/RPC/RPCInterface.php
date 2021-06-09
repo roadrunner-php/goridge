@@ -37,10 +37,11 @@ interface RPCInterface
      * Invoke remove RoadRunner service method using given payload (free form).
      *
      * @param string $method
-     * @param mixed  $payload
+     * @param mixed $payload
+     * @param mixed|null $options
      * @return mixed
      * @throws GoridgeException
      * @throws RPCException
      */
-    public function call(string $method, $payload);
+    public function call(string $method, $payload, $options = null);
 }
