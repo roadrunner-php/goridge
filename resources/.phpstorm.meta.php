@@ -11,7 +11,8 @@ namespace PHPSTORM_META {
         \Spiral\Goridge\SocketRelay::SOCK_UNIX,
     );
 
-    expectedArguments(\Spiral\Goridge\SocketRelay::__construct(), 2, 'goridge_relay_socket_type');
+    expectedArguments(\Spiral\Goridge\SocketRelay::__construct(), 2,
+        argumentsSet('goridge_relay_socket_type'));
 
     //
     // RPC
@@ -31,10 +32,15 @@ namespace PHPSTORM_META {
         \MessagePack\UnpackOptions::BIGINT_AS_STR,
     );
 
-    expectedArguments(\Spiral\Goridge\RPC\RPCInterface::call(), 2, 'goridge_rpc_options_json');
-    expectedArguments(\Spiral\Goridge\RPC\RPC::call(), 2, 'goridge_rpc_options_json');
-    expectedArguments(\Spiral\Goridge\RPC\RPCInterface::call(), 2, 'goridge_rpc_options_msgpack');
-    expectedArguments(\Spiral\Goridge\RPC\RPC::call(), 2, 'goridge_rpc_options_msgpack');
+    expectedArguments(\Spiral\Goridge\RPC\RPCInterface::call(), 2,
+        argumentsSet('goridge_rpc_options_json'));
+    expectedArguments(\Spiral\Goridge\RPC\RPC::call(), 2,
+        argumentsSet('goridge_rpc_options_json'));
+
+    expectedArguments(\Spiral\Goridge\RPC\RPCInterface::call(), 2,
+        argumentsSet('goridge_rpc_options_msgpack'));
+    expectedArguments(\Spiral\Goridge\RPC\RPC::call(), 2,
+        argumentsSet('goridge_rpc_options_msgpack'));
 
     override(\Spiral\Goridge\RPC\RPCInterface::call(), map(['' => '@']));
     override(\Spiral\Goridge\RPC\RPC::call(), map(['' => '@']));
@@ -48,6 +54,8 @@ namespace PHPSTORM_META {
         'informer.List',
     );
 
-    expectedArguments(\Spiral\Goridge\RPC\RPCInterface::call(), 0, 'goridge_rpc_methods_informer');
-    expectedArguments(\Spiral\Goridge\RPC\RPC::call(), 0, 'goridge_rpc_methods_informer');
+    expectedArguments(\Spiral\Goridge\RPC\RPCInterface::call(), 0,
+        argumentsSet('goridge_rpc_methods_informer'));
+    expectedArguments(\Spiral\Goridge\RPC\RPC::call(), 0,
+        argumentsSet('goridge_rpc_methods_informer'));
 }
