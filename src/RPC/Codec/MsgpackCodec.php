@@ -16,7 +16,7 @@ use Spiral\Goridge\RPC\CodecInterface;
 
 /**
  * @psalm-type PackHandler = \Closure(mixed): string
- * @psalm-type UnpackHandler = \Closure(string): mixed
+ * @psalm-type UnpackHandler = \Closure(string, mixed|null): mixed
  */
 final class MsgpackCodec implements CodecInterface
 {
@@ -41,9 +41,7 @@ final class MsgpackCodec implements CodecInterface
     }
 
     /**
-     * Coded index, uniquely identified by remote server.
-     *
-     * @return int
+     * {@inheritDoc}
      */
     public function getIndex(): int
     {
@@ -51,8 +49,7 @@ final class MsgpackCodec implements CodecInterface
     }
 
     /**
-     * @param mixed $payload
-     * @return string
+     * {@inheritDoc}
      */
     public function encode($payload): string
     {
@@ -60,16 +57,17 @@ final class MsgpackCodec implements CodecInterface
     }
 
     /**
-     * @param string $payload
-     * @return mixed
+     * {@inheritDoc}
      */
-    public function decode(string $payload)
+    public function decode(string $payload, $options = null)
     {
-        return ($this->unpack)($payload);
+        return ($this->unpack)($payload, $options);
     }
 
     /**
      * Init pack and unpack functions.
+     *
+     * @psalm-suppress MixedArgument
      */
     private function initPacker(): void
     {
@@ -79,7 +77,11 @@ final class MsgpackCodec implements CodecInterface
                 return msgpack_pack($payload);
             };
 
-            $this->unpack = static function (string $payload) {
+            $this->unpack = static function (string $payload, $options = null) {
+                if ($options !== null) {
+                    return msgpack_unpack($payload, $options);
+                }
+
                 return msgpack_unpack($payload);
             };
 
@@ -92,8 +94,8 @@ final class MsgpackCodec implements CodecInterface
                 return MessagePack::pack($payload);
             };
 
-            $this->unpack = static function (string $payload) {
-                return MessagePack::unpack($payload);
+            $this->unpack = static function (string $payload, $options = null) {
+                return MessagePack::unpack($payload, $options);
             };
         }
 

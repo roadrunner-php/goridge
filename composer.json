@@ -18,7 +18,8 @@
     "require-dev": {
         "vimeo/psalm": "^4.6",
         "spiral/code-style": "^1.0",
-        "rybakit/msgpack": "^0.7.1",
+        "google/protobuf": "^3.17",
+        "rybakit/msgpack": "^0.7",
         "phpunit/phpunit": "^8.0",
         "jetbrains/phpstorm-attributes": "^1.0"
     },
@@ -34,7 +35,9 @@
     },
     "suggest": {
         "ext-msgpack": "MessagePack codec support",
-        "rybakit/msgpack": "(^0.7) MessagePack codec support"
+        "ext-protobuf": "Protobuf codec support",
+        "rybakit/msgpack": "(^0.7) MessagePack codec support",
+        "google/protobuf": "(^3.0) Protobuf codec support"
     },
     "scripts": {
         "test": "phpunit --no-coverage --colors=always",
