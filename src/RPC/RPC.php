@@ -16,6 +16,8 @@ use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\JsonCodec;
 use Spiral\Goridge\RPC\Exception\RPCException;
 use Spiral\Goridge\RPC\Exception\ServiceException;
+use Spiral\RoadRunner\Environment;
+use Spiral\RoadRunner\EnvironmentInterface;
 
 class RPC implements RPCInterface
 {
@@ -108,6 +110,25 @@ class RPC implements RPCInterface
         $relay = Relay::create($connection);
 
         return new self($relay, $codec);
+    }
+
+    /**
+     * @param EnvironmentInterface $env
+     * @param CodecInterface|null $codec
+     * @return RPCInterface
+     */
+    public static function fromEnvironment(EnvironmentInterface $env, CodecInterface $codec = null): RPCInterface
+    {
+        return self::create($env->getRPCAddress(), $codec);
+    }
+
+    /**
+     * @param CodecInterface|null $codec
+     * @return RPCInterface
+     */
+    public static function fromGlobals(CodecInterface $codec = null): RPCInterface
+    {
+        return self::fromEnvironment(Environment::fromGlobals(), $codec);
     }
 
     /**
