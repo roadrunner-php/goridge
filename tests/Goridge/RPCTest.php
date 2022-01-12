@@ -137,7 +137,7 @@ abstract class RPCTest extends TestCase
     public function testRawBody(): void
     {
         $conn = $this->makeRPC();
-        $payload = random_bytes(65000 * 100);
+        $payload = random_bytes(100);
 
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
@@ -154,7 +154,7 @@ abstract class RPCTest extends TestCase
     public function testLongRawBody(): void
     {
         $conn = $this->makeRPC();
-        $payload = random_bytes(65000 * 100);
+        $payload = random_bytes(65000 * 1000);
 
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
