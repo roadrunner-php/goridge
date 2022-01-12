@@ -13,8 +13,7 @@
         "php": ">=7.4",
         "ext-json": "*",
         "ext-sockets": "*",
-        "symfony/polyfill-php80": "^1.22",
-        "spiral/roadrunner-worker": "^2.1"
+        "symfony/polyfill-php80": "^1.22"
     },
     "require-dev": {
         "vimeo/psalm": "^4.6",
