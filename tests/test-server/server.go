@@ -6,7 +6,7 @@ import (
     "os"
     "strings"
 
-    "github.com/spiral/goridge/v3"
+    goridgeRpc "github.com/spiral/goridge/v3/pkg/rpc"
 )
 
 // Service
@@ -81,6 +81,6 @@ func main() {
         if err != nil {
             continue
         }
-        go rpc.ServeCodec(goridge.NewCodec(conn))
+        go rpc.ServeCodec(goridgeRpc.NewCodec(conn))
     }
 }
