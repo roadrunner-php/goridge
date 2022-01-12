@@ -6,7 +6,7 @@ import (
     "net"
     "net/rpc"
 
-    "github.com/spiral/goridge/v3"
+    goridgeRpc "github.com/spiral/goridge/v3/pkg/rpc"
 )
 
 // App sample
@@ -37,6 +37,6 @@ func main() {
         }
 
         log.Printf("new connection %+v", conn)
-        go rpc.ServeCodec(goridge.NewCodec(conn))
+        go rpc.ServeCodec(goridgeRpc.NewCodec(conn))
     }
 }
