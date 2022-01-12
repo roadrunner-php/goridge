@@ -13,7 +13,7 @@ RUN go mod download
 
 RUN go mod verify
 
-RUN go build -a -ldflags="-s" -o ./server ./server.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags="-s" -o ./server ./server.go
 
 # Image page: <https://hub.docker.com/_/alpine>
 FROM alpine:3.15 as runtime
