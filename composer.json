@@ -13,15 +13,17 @@
         "php": ">=7.4",
         "ext-json": "*",
         "ext-sockets": "*",
-        "symfony/polyfill-php80": "^1.22"
+        "symfony/polyfill-php80": "^1.22",
+        "spiral/roadrunner-worker": "^2.1"
     },
     "require-dev": {
         "vimeo/psalm": "^4.6",
         "spiral/code-style": "^1.0",
         "google/protobuf": "^3.17",
         "rybakit/msgpack": "^0.7",
-        "phpunit/phpunit": "^8.0",
-        "jetbrains/phpstorm-attributes": "^1.0"
+        "phpunit/phpunit": "^9.5",
+        "jetbrains/phpstorm-attributes": "^1.0",
+        "infection/infection": "^0.26.1"
     },
     "autoload": {
         "psr-4": {
@@ -42,7 +44,8 @@
     "scripts": {
         "test": "phpunit --no-coverage --colors=always",
         "test-cover": "phpunit --coverage-clover=coverage.xml",
-        "analyze": "psalm"
+        "test-static": "psalm",
+        "test-mutations": "infection"
     },
     "extra": {
         "branch-alias": {

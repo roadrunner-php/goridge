@@ -35,8 +35,8 @@ jobs:
       - name: Install Composer dependencies
         run: composer update --prefer-dist --no-interaction --prefer-lowest --no-progress --ansi # --prefer-source
 
-      - name: Run analyze
-        run: composer analyze
+      - name: Run static analyze
+        run: composer test-static
 
       - name: Build test server
         run: docker build --tag test-server:local -f ./tests/test-server/Dockerfile ./tests/test-server
