@@ -30,7 +30,7 @@ See https://github.com/spiral/roadrunner - High-performance PHP application serv
 ## Installation
 
 ```
-$ composer require spiral/goridge
+composer require spiral/goridge
 ```
 
 ## Example
