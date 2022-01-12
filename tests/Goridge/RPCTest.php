@@ -155,7 +155,7 @@ abstract class RPCTest extends TestCase
     {
         $conn = $this->makeRPC();
         $payload = random_bytes(65000 * 1000);
-
+        
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload

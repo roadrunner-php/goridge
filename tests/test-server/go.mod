@@ -2,7 +2,7 @@ module test_server
 
 go 1.17
 
-require github.com/spiral/goridge/v3 v3.2.6
+require github.com/spiral/goridge/v3 v3.2.7
 
 require (
 	github.com/json-iterator/go v1.1.12 // indirect
