@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Spiral\Goridge;
 
 use JetBrains\PhpStorm\ExpectedValues;
+use Socket;
 use Spiral\Goridge\Exception\HeaderException;
 use Spiral\Goridge\Exception\InvalidArgumentException;
 use Spiral\Goridge\Exception\RelayException;
@@ -60,7 +61,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
     private int $type;
 
     /**
-     * @var resource|null
+     * @var Socket|resource|null
      */
     private $socket = null;
 
@@ -180,9 +181,11 @@ class SocketRelay extends Relay implements StringableRelayInterface
         $this->connect();
 
         $header = '';
+        /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
         $headerLength = \socket_recv($this->socket, $header, 12, \MSG_WAITALL);
 
         if ($headerLength !== 12) {
+            /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
             $error = \socket_strerror(\socket_last_error($this->socket));
             throw new HeaderException(\sprintf('Unable to read frame header: %s', $error));
         }
@@ -194,6 +197,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
         $length = $parts[1] * 4 + $parts[2];
 
         while ($length > 0) {
+            /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
             $bufferLength = \socket_recv($this->socket, $buffer, $length, \MSG_WAITALL);
 
             /**
@@ -203,6 +207,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
              * @psalm-suppress TypeDoesNotContainNull
              */
             if ($bufferLength === false || $buffer === null) {
+                /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
                 $message = \socket_strerror(\socket_last_error($this->socket));
                 throw new HeaderException(\sprintf('Unable to read payload from socket: %s', $message));
             }
@@ -225,6 +230,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
 
         $body = Frame::packFrame($frame);
 
+        /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
         if (\socket_send($this->socket, $body, \strlen($body), 0) === false) {
             throw new TransportException('Unable to write payload to the stream');
         }
@@ -259,6 +265,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
             $status = false;
 
             for ($attempt = 0; $attempt <= $retries; ++$attempt) {
+                /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
                 if ($status = @\socket_connect($socket, $this->address, $this->port ?? 0)) {
                     break;
                 }
@@ -267,6 +274,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
             }
 
             if ($status === false) {
+                /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
                 throw new RelayException(\socket_strerror(\socket_last_error($socket)));
             }
         } catch (\Throwable $e) {
@@ -291,12 +299,13 @@ class SocketRelay extends Relay implements StringableRelayInterface
             throw new RelayException("Unable to close socket '{$this}', socket already closed");
         }
 
+        /** @psalm-suppress PossiblyInvalidArgument Reason: PHP 7-8 compatibility */
         \socket_close($this->socket);
         $this->socket = null;
     }
 
     /**
-     * @return resource|false
+     * @return Socket|resource|false
      */
     private function createSocket()
     {
