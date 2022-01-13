@@ -1,11 +1,5 @@
 <?php
 
-/**
- * Dead simple, high performance, drop-in bridge to Golang RPC with zero dependencies
- *
- * @author Wolfy-J
- */
-
 declare(strict_types=1);
 
 namespace Spiral\Goridge\RPC;
@@ -116,19 +110,27 @@ class RPC implements RPCInterface
      * @param EnvironmentInterface $env
      * @param CodecInterface|null $codec
      * @return RPCInterface
+     *
+     * @psalm-suppress UndefinedClass
      */
     public static function fromEnvironment(EnvironmentInterface $env, CodecInterface $codec = null): RPCInterface
     {
-        return self::create($env->getRPCAddress(), $codec);
+        /** @var string $address */
+        $address = $env->getRPCAddress();
+        return self::create($address, $codec);
     }
 
     /**
      * @param CodecInterface|null $codec
      * @return RPCInterface
+     *
+     * @psalm-suppress UndefinedClass
      */
     public static function fromGlobals(CodecInterface $codec = null): RPCInterface
     {
-        return self::fromEnvironment(Environment::fromGlobals(), $codec);
+        /** @var EnvironmentInterface $env */
+        $env = Environment::fromGlobals();
+        return self::fromEnvironment($env, $codec);
     }
 
     /**

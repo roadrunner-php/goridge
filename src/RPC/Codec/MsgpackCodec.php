@@ -1,11 +1,5 @@
 <?php
 
-/**
- * Dead simple, high performance, drop-in bridge to Golang RPC with zero dependencies
- *
- * @author Wolfy-J
- */
-
 declare(strict_types=1);
 
 namespace Spiral\Goridge\RPC\Codec;
@@ -22,13 +16,13 @@ final class MsgpackCodec implements CodecInterface
 {
     /**
      * @var PackHandler
-     * @psalm-suppress PropertyNotSetInConstructor Reason: Initialized via private method
+     * @psalm-suppress PropertyNotSetInConstructor Reason: Initialized via {@see initPacker()}
      */
     private \Closure $pack;
 
     /**
      * @var UnpackHandler
-     * @psalm-suppress PropertyNotSetInConstructor Reason: Initialized via private method
+     * @psalm-suppress PropertyNotSetInConstructor Reason: Initialized via {@see initPacker()}
      */
     private \Closure $unpack;
 

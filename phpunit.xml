@@ -9,6 +9,7 @@
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
          processIsolation="false"
+         executionOrder="random"
          stopOnFailure="false"
          stopOnError="false"
          stderr="true"
@@ -19,9 +20,9 @@
         </testsuite>
     </testsuites>
 
-    <filter>
-        <whitelist>
+    <coverage>
+        <include>
             <directory>src</directory>
-        </whitelist>
-    </filter>
+        </include>
+    </coverage>
 </phpunit>

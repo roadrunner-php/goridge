@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  test-server:
+    build:
+      context: './test-server/'
+      dockerfile: 'Dockerfile'
+    container_name: goridge-test-server
+    restart: always
+    ports:
+      - "7079:7079/tcp"

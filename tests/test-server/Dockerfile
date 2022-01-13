@@ -1,5 +1,5 @@
 # Image page: <https://hub.docker.com/_/golang>
-FROM golang:1.15-alpine as builder
+FROM golang:1.17-alpine as builder
 
 # Copy server sources into image
 COPY ./go.mod ./go.sum ./server.go /src/
@@ -7,13 +7,16 @@ COPY ./go.mod ./go.sum ./server.go /src/
 WORKDIR /src
 
 # Build goride server
-RUN set -x \
-    && go mod download \
-    && go mod verify \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags="-s" -o ./server ./server.go
+RUN go mod tidy
+
+RUN go mod download
+
+RUN go mod verify
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags="-s" -o ./server ./server.go
 
 # Image page: <https://hub.docker.com/_/alpine>
-FROM alpine:3.12 as runtime
+FROM alpine:3.15 as runtime
 
 # Unprivileged user creation <https://stackoverflow.com/a/55757473/12429735RUN>
 RUN adduser \

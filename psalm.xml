@@ -13,6 +13,11 @@
         <MissingClosureParamType errorLevel="suppress" />
         <MissingClosureReturnType errorLevel="suppress" />
         <DocblockTypeContradiction errorLevel="suppress" />
+        <UndefinedDocblockClass >
+            <errorLevel type="suppress">
+                <referencedClass name="Socket"/>
+            </errorLevel>
+        </UndefinedDocblockClass >
     </issueHandlers>
     <projectFiles>
         <directory name="src" />
