@@ -1,7 +1,25 @@
 CHANGELOG
 =========
 
-## v3.0.0
+## v3.1.2 (13.01.2022)
+- Update .gitattributes (exclude psalm config & examples from export) by @tarampampam (#8)
+- Update tests by @roxblnfk (#9)
+  * add mutation testing
+  * fix Psalm issues
+  * update dependencies
+
+## v3.1.1 (10.06.2021)
+- Fix `.phpstorm.meta.php` autocompletion
+
+## v3.1.0 (10.06.2021)
+- Added optional `RPC::call()` 3rd `options` argument.
+- Added protobuf codec.
+- Added simple autocomplete.
+
+## v3.0.1 (11.03.2021)
+- Fix lowercase formatting in unix socket (#3, #4)
+
+## v3.0.0 (18.01.2021)
 - Full rewamp of protocol, added support for arbitrary options
 - Reduced number of syscalls
 - Added support for multi-codec RPC
