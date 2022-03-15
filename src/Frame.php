@@ -48,6 +48,15 @@ final class Frame
     public const CODEC_PROTO   = 0x80;
     /**#@-*/
 
+    /**#@+
+     * BYTE flags, it means, that we can set multiply flags from this group
+     * using bitwise OR.
+     *
+     * @var positive-int Flags for {@see $byte10}
+     */
+    public const CONNECTION_CHUNKED_OUT = 0x01;
+    /**#@-*/
+
     /**
      * @var string|null
      */
@@ -62,6 +71,10 @@ final class Frame
      * @var int
      */
     public int $flags;
+
+    public int $byte10 = 0;
+
+    public int $byte11 = 0;
 
     /**
      * @param string|null $body
@@ -85,7 +98,7 @@ final class Frame
                 throw new InvalidArgumentException('Flags can be byte only');
             }
 
-            $this->flags = $this->flags | $f;
+            $this->flags |= $f;
         }
     }
 
@@ -117,17 +130,17 @@ final class Frame
      */
     public static function packFrame(Frame $frame): string
     {
-        $header = pack(
+        $header = \pack(
             'CCL',
-            self::VERSION << 4 | (count($frame->options) + 3),
+            self::VERSION << 4 | (\count($frame->options) + 3),
             $frame->flags,
-            strlen((string)$frame->payload)
+            \strlen((string)$frame->payload)
         );
 
         if ($frame->options !== []) {
-            $header .= pack('LCCL*', crc32($header), 0, 0, ...$frame->options);
+            $header .= \pack('LCCL*', \crc32($header), $frame->byte10, $frame->byte11, ...$frame->options);
         } else {
-            $header .= pack('LCC', crc32($header), 0, 0);
+            $header .= \pack('LCC', \crc32($header), $frame->byte10, $frame->byte11);
         }
 
         return $header . (string)$frame->payload;
@@ -157,7 +170,7 @@ final class Frame
      */
     public static function initFrame(array $header, string $body): Frame
     {
-        assert(count($header) >= 2);
+        \assert(\count($header) >= 2);
 
         /**
          * optimize?
