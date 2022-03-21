@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+## v3.2.0 (22.03.2022)
+- Support for streamed output by @roxblnfk (#13)
+
 ## v3.1.2 (13.01.2022)
 - Update .gitattributes (exclude psalm config & examples from export) by @tarampampam (#8)
 - Update tests by @roxblnfk (#9)
