@@ -11,6 +11,8 @@ use Spiral\Goridge\Exception\InvalidArgumentException;
  * @psalm-type FrameType = Frame::CONTROL | Frame::ERROR
  * @psalm-type FrameCodec = Frame::CODEC_*
  * @psalm-type FrameCodecValue = int-mask-of<FrameCodec>
+ * @psalm-type FrameByte10 = Frame::BYTE10_*
+ * @psalm-type FrameByte10Value = int-mask-of<FrameByte10>
  */
 final class Frame
 {
@@ -49,12 +51,12 @@ final class Frame
     /**#@-*/
 
     /**#@+
-     * BYTE flags, it means, that we can set multiply flags from this group
+     * BYTE10 flags, it means, that we can set multiply flags from this group
      * using bitwise OR.
      *
      * @var positive-int Flags for {@see $byte10}
      */
-    public const CONNECTION_CHUNKED_OUT = 0x01;
+    public const BYTE10_STREAM = 0x01;
     /**#@-*/
 
     /**
@@ -67,25 +69,26 @@ final class Frame
      */
     public array $options = [];
 
-    /**
-     * @var int
-     */
     public int $flags;
 
-    public int $byte10 = 0;
+    /**
+     * @psalm-var FrameByte10Value
+     */
+    public int $byte10;
 
     public int $byte11 = 0;
 
     /**
-     * @param string|null $body
      * @param array<int> $options
-     * @param int $flags
+     *
+     * @psalm-param FrameByte10Value $byte10
      */
-    public function __construct(?string $body, array $options = [], int $flags = 0)
+    public function __construct(?string $body, array $options = [], int $flags = 0, int $byte10 = 0)
     {
         $this->payload = $body;
         $this->options = $options;
         $this->flags = $flags;
+        $this->byte10 = $byte10;
     }
 
     /**
