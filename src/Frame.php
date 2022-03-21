@@ -74,21 +74,18 @@ final class Frame
     /**
      * @psalm-var FrameByte10Value
      */
-    public int $byte10;
+    public int $byte10 = 0;
 
     public int $byte11 = 0;
 
     /**
      * @param array<int> $options
-     *
-     * @psalm-param FrameByte10Value $byte10
      */
-    public function __construct(?string $body, array $options = [], int $flags = 0, int $byte10 = 0)
+    public function __construct(?string $body, array $options = [], int $flags = 0)
     {
         $this->payload = $body;
         $this->options = $options;
         $this->flags = $flags;
-        $this->byte10 = $byte10;
     }
 
     /**
