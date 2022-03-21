@@ -11,6 +11,8 @@ use Spiral\Goridge\Exception\InvalidArgumentException;
  * @psalm-type FrameType = Frame::CONTROL | Frame::ERROR
  * @psalm-type FrameCodec = Frame::CODEC_*
  * @psalm-type FrameCodecValue = int-mask-of<FrameCodec>
+ * @psalm-type FrameByte10 = Frame::BYTE10_*
+ * @psalm-type FrameByte10Value = int-mask-of<FrameByte10>
  */
 final class Frame
 {
@@ -48,6 +50,15 @@ final class Frame
     public const CODEC_PROTO   = 0x80;
     /**#@-*/
 
+    /**#@+
+     * BYTE10 flags, it means, that we can set multiply flags from this group
+     * using bitwise OR.
+     *
+     * @var positive-int Flags for {@see $byte10}
+     */
+    public const BYTE10_STREAM = 0x01;
+    /**#@-*/
+
     /**
      * @var string|null
      */
@@ -58,15 +69,17 @@ final class Frame
      */
     public array $options = [];
 
-    /**
-     * @var int
-     */
     public int $flags;
 
     /**
-     * @param string|null $body
+     * @psalm-var FrameByte10Value
+     */
+    public int $byte10 = 0;
+
+    public int $byte11 = 0;
+
+    /**
      * @param array<int> $options
-     * @param int $flags
      */
     public function __construct(?string $body, array $options = [], int $flags = 0)
     {
@@ -85,7 +98,7 @@ final class Frame
                 throw new InvalidArgumentException('Flags can be byte only');
             }
 
-            $this->flags = $this->flags | $f;
+            $this->flags |= $f;
         }
     }
 
@@ -117,17 +130,17 @@ final class Frame
      */
     public static function packFrame(Frame $frame): string
     {
-        $header = pack(
+        $header = \pack(
             'CCL',
-            self::VERSION << 4 | (count($frame->options) + 3),
+            self::VERSION << 4 | (\count($frame->options) + 3),
             $frame->flags,
-            strlen((string)$frame->payload)
+            \strlen((string)$frame->payload)
         );
 
         if ($frame->options !== []) {
-            $header .= pack('LCCL*', crc32($header), 0, 0, ...$frame->options);
+            $header .= \pack('LCCL*', \crc32($header), $frame->byte10, $frame->byte11, ...$frame->options);
         } else {
-            $header .= pack('LCC', crc32($header), 0, 0);
+            $header .= \pack('LCC', \crc32($header), $frame->byte10, $frame->byte11);
         }
 
         return $header . (string)$frame->payload;
@@ -157,7 +170,7 @@ final class Frame
      */
     public static function initFrame(array $header, string $body): Frame
     {
-        assert(count($header) >= 2);
+        \assert(\count($header) >= 2);
 
         /**
          * optimize?

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Spiral\Goridge\Tests;
 
 use Spiral\Goridge\RPC\Codec\MsgpackCodec;
-use Spiral\Goridge\RPC\Exception\CodecException;
 use Spiral\Goridge\RPC\Exception\ServiceException;
 use Spiral\Goridge\RPC\RPC;
 
