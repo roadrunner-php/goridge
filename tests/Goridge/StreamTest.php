@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace Goridge;
+namespace Spiral\Goridge\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Frame;
@@ -19,7 +19,7 @@ class StreamTest extends TestCase
 {
     public function testMessagePassing(): void
     {
-        $resource = fopen('php://memory', 'r+');
+        $resource = fopen('php://memory', 'rb+');
 
         $relay = new StreamRelay($resource, $resource);
 

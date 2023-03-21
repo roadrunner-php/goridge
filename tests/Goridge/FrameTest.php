@@ -1,6 +1,6 @@
 <?php
 
-namespace Goridge;
+namespace Spiral\Goridge\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Frame;
