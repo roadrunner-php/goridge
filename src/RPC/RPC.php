@@ -112,6 +112,7 @@ class RPC implements RPCInterface
      * @return RPCInterface
      *
      * @psalm-suppress UndefinedClass
+     * @deprecated
      */
     public static function fromEnvironment(EnvironmentInterface $env, CodecInterface $codec = null): RPCInterface
     {
@@ -125,6 +126,7 @@ class RPC implements RPCInterface
      * @return RPCInterface
      *
      * @psalm-suppress UndefinedClass
+     * @deprecated
      */
     public static function fromGlobals(CodecInterface $codec = null): RPCInterface
     {
