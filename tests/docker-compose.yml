@@ -1,5 +1,6 @@
 version: "3"
 
+name: goridge-roadrunner
 services:
   test-server:
     build:
