@@ -21,4 +21,6 @@ interface RelayInterface
      * @param Frame $frame
      */
     public function send(Frame $frame): void;
+
+    public function hasFrame(): bool;
 }

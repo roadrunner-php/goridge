@@ -130,6 +130,17 @@ class StreamRelay extends Relay
         }
     }
 
+    public function hasFrame(): bool
+    {
+        $read = [$this->in];
+        $write = null;
+        $except = null;
+
+        $is = \stream_select($read, $write, $except, 0);
+
+        return $is > 0;
+    }
+
     /**
      * Checks if stream is readable.
      *

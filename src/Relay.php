@@ -93,4 +93,9 @@ abstract class Relay implements RelayInterface
 
         return $resource;
     }
+
+    public function hasFrame(): bool
+    {
+        return false;
+    }
 }

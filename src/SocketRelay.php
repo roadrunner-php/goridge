@@ -63,7 +63,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
     /**
      * @var Socket|resource|null
      */
-    private $socket = null;
+    private ?Socket $socket = null;
 
     /**
      * Example:
@@ -234,6 +234,21 @@ class SocketRelay extends Relay implements StringableRelayInterface
         if (\socket_send($this->socket, $body, \strlen($body), 0) === false) {
             throw new TransportException('Unable to write payload to the stream');
         }
+    }
+
+    public function hasFrame(): bool
+    {
+        if (!$this->isConnected()) {
+            return false;
+        }
+
+        $read = [$this->socket];
+        $write = null;
+        $except = null;
+
+        $is = \socket_select($read, $write, $except, 0);
+
+        return $is > 0;
     }
 
     /**
