@@ -9,8 +9,5 @@ namespace Spiral\Goridge;
  */
 interface StringableRelayInterface extends \Stringable
 {
-    /**
-     * {@inheritDoc}
-     */
     public function __toString(): string;
 }

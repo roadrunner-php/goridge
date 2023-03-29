@@ -34,26 +34,17 @@ final class MsgpackCodec implements CodecInterface
         $this->initPacker();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getIndex(): int
     {
         return Frame::CODEC_MSGPACK;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function encode($payload): string
+    public function encode(mixed $payload): string
     {
         return ($this->pack)($payload);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function decode(string $payload, $options = null)
+    public function decode(string $payload, mixed $options = null): mixed
     {
         return ($this->unpack)($payload, $options);
     }

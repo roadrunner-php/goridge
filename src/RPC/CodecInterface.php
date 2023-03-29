@@ -13,23 +13,16 @@ interface CodecInterface
 {
     /**
      * Coded index, uniquely identified by remote server.
-     *
-     * @return int
      */
     public function getIndex(): int;
 
     /**
-     * @param mixed $payload
-     * @return string
      * @throws CodecException
      */
-    public function encode($payload): string;
+    public function encode(mixed $payload): string;
 
     /**
-     * @param string $payload
-     * @param mixed|null $options
-     * @return mixed
      * @throws CodecException
      */
-    public function decode(string $payload, $options = null);
+    public function decode(string $payload, mixed $options = null): mixed;
 }

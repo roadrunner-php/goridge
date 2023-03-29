@@ -10,9 +10,6 @@ use Spiral\Goridge\RPC\CodecInterface;
 
 final class ProtobufCodec implements CodecInterface
 {
-    /**
-     * @var string
-     */
     private const ERROR_DEPENDENCY =
         'Could not initialize protobuf codec. ' .
         'Please add "ext-protobuf" PECL extension or ' .
@@ -23,9 +20,6 @@ final class ProtobufCodec implements CodecInterface
         $this->assertAvailable();
     }
 
-    /**
-     * @return void
-     */
     private function assertAvailable(): void
     {
         if (!\class_exists(Message::class)) {
@@ -33,21 +27,16 @@ final class ProtobufCodec implements CodecInterface
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getIndex(): int
     {
         return Frame::CODEC_PROTO;
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @psalm-suppress MixedInferredReturnType
      * @psalm-suppress MixedReturnStatement
      */
-    public function encode($payload): string
+    public function encode(mixed $payload): string
     {
         if ($payload instanceof Message) {
             return $payload->serializeToString();
@@ -67,10 +56,7 @@ final class ProtobufCodec implements CodecInterface
         return new $class();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function decode(string $payload, $options = null)
+    public function decode(string $payload, mixed $options = null): mixed
     {
         if (\is_string($options) && \is_subclass_of($options, Message::class, true)) {
             $options = $this->create($options);

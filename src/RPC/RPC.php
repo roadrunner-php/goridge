@@ -46,7 +46,6 @@ class RPC implements RPCInterface
     }
 
     /**
-     * {@inheritDoc}
      * @psalm-pure
      */
     public function withServicePrefix(string $service): RPCInterface
@@ -59,7 +58,6 @@ class RPC implements RPCInterface
     }
 
     /**
-     * {@inheritDoc}
      * @psalm-pure
      */
     public function withCodec(CodecInterface $codec): RPCInterface
@@ -71,10 +69,7 @@ class RPC implements RPCInterface
         return $rpc;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function call(string $method, $payload, $options = null)
+    public function call(string $method, mixed $payload, mixed $options = null): mixed
     {
         $this->relay->send($this->packFrame($method, $payload));
 

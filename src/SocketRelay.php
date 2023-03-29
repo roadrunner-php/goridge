@@ -21,7 +21,7 @@ use Spiral\Goridge\Exception\TransportException;
  * [ flag       ][ message length, unsigned int 64bits, LittleEndian ]
  *
  * @psalm-type SocketRelayType = SocketRelay::SOCK_*
- * @psalm-type PortType = positive-int|0|null
+ * @psalm-type PortType = int<0, max>|null
  *
  * @psalm-suppress DeprecatedInterface
  */
@@ -35,12 +35,12 @@ class SocketRelay extends Relay implements StringableRelayInterface
     /**#@-*/
 
     /**
-     * @var positive-int|0
+     * @var int<0, max>
      */
     public const RECONNECT_RETRIES = 10;
 
     /**
-     * @var positive-int|0
+     * @var int<0, max>
      */
     public const RECONNECT_TIMEOUT = 100;
 
@@ -60,9 +60,6 @@ class SocketRelay extends Relay implements StringableRelayInterface
      */
     private int $type;
 
-    /**
-     * @var Socket|resource|null
-     */
     private ?Socket $socket = null;
 
     /**
@@ -126,9 +123,6 @@ class SocketRelay extends Relay implements StringableRelayInterface
         }
     }
 
-    /**
-     * @return string
-     */
     public function __toString(): string
     {
         if ($this->type === self::SOCK_TCP) {
@@ -138,43 +132,33 @@ class SocketRelay extends Relay implements StringableRelayInterface
         return "unix://{$this->address}";
     }
 
-    /**
-     * @return string
-     */
     public function getAddress(): string
     {
         return $this->address;
     }
 
     /**
-     * @return int|null
+     * @return positive-int|null
      */
     public function getPort(): ?int
     {
         return $this->port;
     }
 
-    /**
-     * @return int
-     */
     public function getType(): int
     {
         return $this->type;
     }
 
-    /**
-     * @return bool
-     */
     public function isConnected(): bool
     {
         return $this->socket !== null;
     }
 
     /**
-     * @return Frame
      * @throws RelayException
      * @psalm-suppress PossiblyNullArgument Reason: Using the "connect()" method guarantees
-     *                                      the existence of the socket.
+     *                 the existence of the socket.
      */
     public function waitFrame(): Frame
     {
@@ -220,9 +204,8 @@ class SocketRelay extends Relay implements StringableRelayInterface
     }
 
     /**
-     * @param Frame $frame
      * @psalm-suppress PossiblyNullArgument Reason: Using the "connect()" method guarantees
-     *                                      the existence of the socket.
+     *                 the existence of the socket.
      */
     public function send(Frame $frame): void
     {
@@ -255,9 +238,9 @@ class SocketRelay extends Relay implements StringableRelayInterface
      * Ensure socket connection. Returns true if socket successfully connected
      * or have already been connected.
      *
-     * @param positive-int|0 $retries Count of connection tries.
-     * @param positive-int|0 $timeout Timeout between reconnections in microseconds.
-     * @return bool
+     * @param int<0, max> $retries Count of connection tries.
+     * @param int<0, max> $timeout Timeout between reconnections in microseconds.
+     *
      * @throws RelayException
      * @throws \Error When sockets are used in unsupported environment.
      */
@@ -319,10 +302,7 @@ class SocketRelay extends Relay implements StringableRelayInterface
         $this->socket = null;
     }
 
-    /**
-     * @return Socket|resource|false
-     */
-    private function createSocket()
+    private function createSocket(): Socket|false
     {
         if ($this->type === self::SOCK_UNIX) {
             return \socket_create(\AF_UNIX, \SOCK_STREAM, 0);

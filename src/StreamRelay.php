@@ -62,7 +62,6 @@ class StreamRelay extends Relay
     }
 
     /**
-     * @return Frame
      * @throws RelayException
      */
     public function waitFrame(): Frame
@@ -103,9 +102,6 @@ class StreamRelay extends Relay
         return Frame::initFrame($parts, $payload);
     }
 
-    /**
-     * @return string
-     */
     private function getLastErrorMessage(): string
     {
         $last = (array)\error_get_last();
@@ -113,9 +109,6 @@ class StreamRelay extends Relay
         return $last['message'] ?? 'Unknown Error';
     }
 
-    /**
-     * @param Frame $frame
-     */
     public function send(Frame $frame): void
     {
         $body = Frame::packFrame($frame);
@@ -145,8 +138,6 @@ class StreamRelay extends Relay
      * Checks if stream is readable.
      *
      * @param resource $stream
-     *
-     * @return bool
      */
     private function assertReadable($stream): bool
     {
@@ -161,8 +152,6 @@ class StreamRelay extends Relay
      * Checks if stream is writable.
      *
      * @param resource $stream
-     *
-     * @return bool
      */
     private function assertWritable($stream): bool
     {
