@@ -18,30 +18,22 @@ final class Frame
 {
     /**
      * Current protocol version.
-     *
-     * @var positive-int
      */
     public const VERSION = 0x01;
 
     /**
      * Control frame type
-     *
-     * @var positive-int
      */
     public const CONTROL = 0x01;
 
     /**
      * Error frame type
-     *
-     * @var positive-int
      */
     public const ERROR = 0x40;
 
     /**#@+
      * BYTE flags, it means, that we can set multiply flags from this group
      * using bitwise OR.
-     *
-     * @var positive-int
      */
     public const CODEC_RAW     = 0x04;
     public const CODEC_JSON    = 0x08;
@@ -60,9 +52,6 @@ final class Frame
     public const BYTE10_STOP = 0x02; // 2.9.0-alpha just streams
     /**#@-*/
 
-    /**
-     * @var string|null
-     */
     public ?string $payload;
 
     /**
@@ -89,9 +78,6 @@ final class Frame
         $this->flags = $flags;
     }
 
-    /**
-     * @param int ...$flag
-     */
     public function setFlag(int ...$flag): void
     {
         foreach ($flag as $f) {
@@ -103,10 +89,6 @@ final class Frame
         }
     }
 
-    /**
-     * @param int $flag
-     * @return bool
-     */
     public function hasFlag(int $flag): bool
     {
         if ($flag > 255) {
@@ -116,17 +98,13 @@ final class Frame
         return ($this->flags & $flag) !== 0;
     }
 
-    /**
-     * @param int ...$options
-     */
     public function setOptions(int ...$options): void
     {
         $this->options = $options;
     }
 
     /**
-     * @param Frame $frame
-     * @return string
+     * @return non-empty-string
      * @internal
      */
     public static function packFrame(Frame $frame): string
@@ -167,8 +145,7 @@ final class Frame
 
     /**
      * @param array<int> $header
-     * @param string $body
-     * @return Frame
+     *
      * @see self::readHeader()
      * @internal
      */

@@ -22,8 +22,7 @@ abstract class Relay implements RelayInterface
      * Relay::create("tpc://localhost:6001");
      *
      *
-     * @param string $connection
-     * @return RelayInterface
+     * @param non-empty-string $connection
      */
     public static function create(string $connection): RelayInterface
     {
@@ -65,7 +64,7 @@ abstract class Relay implements RelayInterface
     }
 
     /**
-     * @param string $input
+     * @param non-empty-string $input
      * @return resource
      */
     private static function openIn(string $input)
@@ -80,7 +79,7 @@ abstract class Relay implements RelayInterface
     }
 
     /**
-     * @param string $output
+     * @param non-empty-string $output
      * @return resource
      */
     private static function openOut(string $output)

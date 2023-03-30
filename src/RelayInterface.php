@@ -12,14 +12,10 @@ use Spiral\Goridge\Exception\RelayException;
 interface RelayInterface
 {
     /**
-     * @return Frame
      * @throws RelayException
      */
     public function waitFrame(): Frame;
 
-    /**
-     * @param Frame $frame
-     */
     public function send(Frame $frame): void;
 
     public function hasFrame(): bool;

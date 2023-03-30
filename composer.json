@@ -35,7 +35,7 @@
         "spiral/roadrunner": "^2023"
     },
     "require-dev": {
-        "vimeo/psalm": "^5.8",
+        "vimeo/psalm": "^5.9",
         "google/protobuf": "^3.22",
         "rybakit/msgpack": "^0.7",
         "phpunit/phpunit": "^10.0",
