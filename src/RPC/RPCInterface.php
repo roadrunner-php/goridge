@@ -30,6 +30,8 @@ interface RPCInterface
     /**
      * Invoke remove RoadRunner service method using given payload (free form).
      *
+     * @param non-empty-string $method
+     *
      * @throws GoridgeException
      * @throws RPCException
      */

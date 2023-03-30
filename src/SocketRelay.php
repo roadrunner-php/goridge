@@ -73,8 +73,9 @@ class SocketRelay extends Relay implements Stringable
      *
      * @param non-empty-string $address Localhost, ip address or hostname.
      * @param PortType $port Ignored for UNIX sockets.
-     * @param SocketRelayType $type
+     * @param int $type
      *
+     * @psalm-assert SocketRelayType $type
      * @throws InvalidArgumentException
      */
     public function __construct(

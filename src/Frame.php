@@ -13,6 +13,7 @@ use Spiral\Goridge\Exception\InvalidArgumentException;
  * @psalm-type FrameCodecValue = int-mask-of<FrameCodec>
  * @psalm-type FrameByte10 = Frame::BYTE10_*
  * @psalm-type FrameByte10Value = int-mask-of<FrameByte10>
+ * @psalm-type HeaderList = array{0: int, 1: int, 2: int<0, max>, 3: FrameByte10Value, 4: int}
  */
 final class Frame
 {
@@ -50,16 +51,6 @@ final class Frame
      */
     public const BYTE10_STREAM = 0x01;
     public const BYTE10_STOP = 0x02; // 2.9.0-alpha just streams
-    /**#@-*/
-
-    public ?string $payload;
-
-    /**
-     * @var array<int>
-     */
-    public array $options = [];
-
-    public int $flags;
 
     /**
      * @psalm-var FrameByte10Value
@@ -71,11 +62,11 @@ final class Frame
     /**
      * @param array<int> $options
      */
-    public function __construct(?string $body, array $options = [], int $flags = 0)
-    {
-        $this->payload = $body;
-        $this->options = $options;
-        $this->flags = $flags;
+    public function __construct(
+        public ?string $payload,
+        public array $options = [],
+        public int $flags = 0,
+    ) {
     }
 
     public function setFlag(int ...$flag): void
@@ -109,6 +100,7 @@ final class Frame
      */
     public static function packFrame(Frame $frame): string
     {
+        /** @var non-empty-string $header */
         $header = \pack(
             'CCL',
             self::VERSION << 4 | (\count($frame->options) + 3),
@@ -129,8 +121,10 @@ final class Frame
      * Parse header and return [flags, num options, payload length, stream byte10, byte11].
      *
      * @param string $header 8 bytes.
-     * @return array{0: int, 1: int, 2: int, 3: int, 4: int}
+     * @return HeaderList
      * @internal
+     *
+     * @psalm-suppress InvalidReturnStatement, InvalidReturnType
      */
     public static function readHeader(string $header): array
     {
@@ -144,15 +138,13 @@ final class Frame
     }
 
     /**
-     * @param array<int> $header
+     * @param HeaderList $header
      *
      * @see self::readHeader()
      * @internal
      */
     public static function initFrame(array $header, string $body): Frame
     {
-        \assert(\count($header) >= 2);
-
         /**
          * optimize?
          * @var array<int> $options

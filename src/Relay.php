@@ -34,6 +34,7 @@ abstract class Relay implements RelayInterface
             throw new Exception\RelayFactoryException('unsupported connection format');
         }
 
+        /** @var array{protocol: non-empty-string, arg1: non-empty-string, arg2: non-empty-string} $match */
         $protocol = strtolower($match['protocol']);
 
         switch ($protocol) {

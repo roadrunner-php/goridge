@@ -52,9 +52,6 @@ class RPC implements RPCInterface
         return $rpc;
     }
 
-    /**
-     * @param non-empty-string $method
-     */
     public function call(string $method, mixed $payload, mixed $options = null): mixed
     {
         $this->relay->send($this->packFrame($method, $payload));
