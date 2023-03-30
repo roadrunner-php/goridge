@@ -29,7 +29,7 @@ class SocketFactoryTest extends TestCase
     /**
      * @return iterable
      */
-    public function constructorProvider(): iterable
+    public static function constructorProvider(): iterable
     {
         return [
             //unknown type

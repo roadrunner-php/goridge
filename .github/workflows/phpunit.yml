@@ -1,9 +1,14 @@
-name: CI
+on:
+  push:
+    branches:
+      - master
+      - '*.*'
+  pull_request: null
 
-on: [push, pull_request]
+name: phpunit
 
 jobs:
-  build:
+  phpunit:
     name: Build (PHP ${{ matrix.php }})
     runs-on: ubuntu-20.04
     timeout-minutes: 10
@@ -35,9 +40,6 @@ jobs:
 
       - name: Install Composer dependencies
         run: composer update --prefer-dist --no-interaction ${{ matrix.flag }} --no-progress --ansi # --prefer-source
-
-      - name: Run static analyze
-        run: vendor/bin/psalm --php-version=${{ matrix.php }}
 
       - name: Build test server
         run: docker build --tag test-server:local -f ./tests/test-server/Dockerfile ./tests/test-server

@@ -43,7 +43,7 @@ class StaticFactoryTest extends TestCase
     /**
      * @return iterable
      */
-    public function formatProvider(): iterable
+    public static function formatProvider(): iterable
     {
         return [
             // format invalid
