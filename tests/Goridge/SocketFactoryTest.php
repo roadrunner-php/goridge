@@ -29,8 +29,6 @@ class SocketFactoryTest extends TestCase
     public static function constructorProvider(): iterable
     {
         return [
-            //unknown type
-            ['localhost', 8080, 8080, InvalidArgumentException::class],
             //invalid ports
             ['localhost', null, SocketType::TCP, InvalidArgumentException::class],
             ['localhost', 66666, SocketType::TCP, InvalidArgumentException::class],

@@ -11,6 +11,7 @@ jobs:
   phpunit:
     uses: spiral/gh-actions/.github/workflows/phpunit.yml@master
     with:
+      test-server: true
       os: >-
         ['ubuntu-latest']
       php: >-
