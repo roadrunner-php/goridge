@@ -8,7 +8,7 @@ use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Spiral\Goridge\RPC\Exception\ServiceException;
 use Spiral\Goridge\RPC\RPC;
 
-class MsgPackRPCTest extends RPCTest
+class MsgPackRPCTest extends \Spiral\Goridge\Tests\RPC
 {
     /**
      * @throws \Exception

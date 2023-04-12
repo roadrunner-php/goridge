@@ -10,43 +10,28 @@ use Spiral\Goridge\RPC\Exception\CodecException;
 
 final class JsonCodec implements CodecInterface
 {
-    /**
-     * {@inheritDoc}
-     */
     public function getIndex(): int
     {
         return Frame::CODEC_JSON;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function encode($payload): string
+    public function encode(mixed $payload): string
     {
         try {
             $result = \json_encode($payload, \JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new CodecException(\sprintf('Json encode: %s', $e->getMessage()), (int)$e->getCode(), $e);
+            throw new CodecException(\sprintf('Json encode: %s', $e->getMessage()), $e->getCode(), $e);
         }
 
         return $result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function decode(string $payload, $options = null)
+    public function decode(string $payload, mixed $options = null): mixed
     {
         try {
-            $flags = \JSON_THROW_ON_ERROR;
-
-            if (\is_int($options)) {
-                $flags |= $options;
-            }
-
-            return \json_decode($payload, true, 512, $flags);
+            return \json_decode($payload, true, 512, \JSON_THROW_ON_ERROR | (\is_int($options) ? $options : 0));
         } catch (\JsonException $e) {
-            throw new CodecException(\sprintf('Json decode: %s', $e->getMessage()), (int)$e->getCode(), $e);
+            throw new CodecException(\sprintf('Json decode: %s', $e->getMessage()), $e->getCode(), $e);
         }
     }
 }

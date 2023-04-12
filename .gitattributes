@@ -1,9 +1,11 @@
 * text=auto
 
-/.github      export-ignore
-/tests        export-ignore
-/examples     export-ignore
-/.*           export-ignore
-/phpunit.xml* export-ignore
-/phpstan.*    export-ignore
-/psalm.*      export-ignore
+/.github       export-ignore
+/tests         export-ignore
+/examples      export-ignore
+/.*            export-ignore
+/phpunit.xml*  export-ignore
+/phpstan.*     export-ignore
+/psalm.*       export-ignore
+/infection.*   export-ignore
+/codecov.*     export-ignore

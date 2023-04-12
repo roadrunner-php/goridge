@@ -10,21 +10,22 @@ use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
 use Spiral\Goridge\RPC\Exception\ServiceException;
-use Spiral\Goridge\RPC\RPC;
+use Spiral\Goridge\RPC\RPC as GoridgeRPC;
 use Spiral\Goridge\SocketRelay;
+use Spiral\Goridge\SocketType;
 
-abstract class RPCTest extends TestCase
+abstract class RPC extends TestCase
 {
     public const GO_APP    = 'server';
     public const SOCK_ADDR = '127.0.0.1';
     public const SOCK_PORT = 7079;
-    public const SOCK_TYPE = SocketRelay::SOCK_TCP;
+    public const SOCK_TYPE = SocketType::TCP;
 
     public function testManualConnect(): void
     {
         /** @var SocketRelay $relay */
         $relay = $this->makeRelay();
-        $conn = new RPC($relay);
+        $conn = new GoridgeRPC($relay);
 
         $this->assertFalse($relay->isConnected());
 
@@ -39,7 +40,7 @@ abstract class RPCTest extends TestCase
     {
         /** @var SocketRelay $relay */
         $relay = $this->makeRelay();
-        $conn = new RPC($relay);
+        $conn = new GoridgeRPC($relay);
 
         $this->assertFalse($relay->isConnected());
 
@@ -155,7 +156,7 @@ abstract class RPCTest extends TestCase
     {
         $conn = $this->makeRPC();
         $payload = random_bytes(65000 * 1000);
-        
+
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload
@@ -249,11 +250,11 @@ abstract class RPCTest extends TestCase
     }
 
     /**
-     * @return RPC
+     * @return GoridgeRPC
      */
-    protected function makeRPC(): RPC
+    protected function makeRPC(): GoridgeRPC
     {
-        return new RPC($this->makeRelay());
+        return new GoridgeRPC($this->makeRelay());
     }
 
     /**

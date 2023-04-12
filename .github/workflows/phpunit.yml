@@ -1,0 +1,20 @@
+on:
+  pull_request: null
+  push:
+    branches:
+      - master
+      - '*.*'
+
+name: phpunit
+
+jobs:
+  phpunit:
+    uses: spiral/gh-actions/.github/workflows/phpunit.yml@master
+    with:
+      test-server: true
+      os: >-
+        ['ubuntu-latest']
+      php: >-
+        ['8.1', '8.2']
+      stability: >-
+        ['prefer-lowest', 'prefer-stable']
