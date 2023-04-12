@@ -5,7 +5,7 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Anton Titov / Wolfy-J",
+            "name": "Anton Titov (Wolfy-J)",
             "email": "wolfy.jd@gmail.com"
         },
         {
@@ -13,8 +13,16 @@
             "homepage": "https://github.com/rustatian"
         },
         {
-            "name": "Aleksei Gagarin",
+            "name": "Aleksei Gagarin (roxblnfk)",
             "homepage": "https://github.com/roxblnfk"
+        },
+        {
+            "name": "Pavel Buchnev (butschster)",
+            "email": "pavel.buchnev@spiralscout.com"
+        },
+        {
+            "name": "Maksim Smakouz (msmakouz)",
+            "email": "maksim.smakouz@spiralscout.com"
         },
         {
             "name": "RoadRunner Community",
