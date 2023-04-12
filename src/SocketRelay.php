@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge;
 
-use JetBrains\PhpStorm\ExpectedValues;
 use Socket;
 use Spiral\Goridge\Exception\HeaderException;
 use Spiral\Goridge\Exception\InvalidArgumentException;
@@ -21,46 +20,24 @@ use Stringable;
  * prefix:
  * [ flag       ][ message length, unsigned int 64bits, LittleEndian ]
  *
- * @psalm-type SocketRelayType = SocketRelay::SOCK_*
  * @psalm-type PortType = int<0, max>|null
  *
  * @psalm-suppress DeprecatedInterface
  */
 class SocketRelay extends Relay implements Stringable
 {
-    /**#@+
-     * Supported socket types.
-     */
-    public const SOCK_TCP  = 0;
-    public const SOCK_UNIX = 1;
-    /**#@-*/
-
-    /**
-     * @var int<0, max>
-     */
-    public const RECONNECT_RETRIES = 10;
-
-    /**
-     * @var int<0, max>
-     */
-    public const RECONNECT_TIMEOUT = 100;
+    final public const RECONNECT_RETRIES = 10;
+    final public const RECONNECT_TIMEOUT = 100;
 
     /**
      * 1) Pathname to "sock" file in case of UNIX socket
      * 2) URI string in case of TCP socket
      */
-    private string $address;
+    private readonly string $address;
 
-    /**
-     * @var PortType
-     */
-    private ?int $port;
-
-    /**
-     * @var SocketRelayType
-     */
-    private int $type;
-
+    /** @var PortType */
+    private readonly ?int $port;
+    private readonly SocketType $type;
     private ?Socket $socket = null;
 
     /**
@@ -68,27 +45,24 @@ class SocketRelay extends Relay implements Stringable
      *
      * <code>
      *  $relay = new SocketRelay("localhost", 7000);
-     *  $relay = new SocketRelay("/tmp/rpc.sock", null, Socket::UNIX_SOCKET);
+     *  $relay = new SocketRelay("/tmp/rpc.sock", null, SocketType::UNIX);
      * </code>
      *
      * @param non-empty-string $address Localhost, ip address or hostname.
      * @param PortType $port Ignored for UNIX sockets.
-     * @param int $type
      *
-     * @psalm-assert SocketRelayType $type
      * @throws InvalidArgumentException
      */
     public function __construct(
         string $address,
         ?int $port = null,
-        #[ExpectedValues(valuesFromClass: SocketRelay::class)]
-        int $type = self::SOCK_TCP
+        SocketType $type = SocketType::TCP,
     ) {
         // Guaranteed at the level of composer's json config
-        assert(\extension_loaded('sockets'));
+        \assert(\extension_loaded('sockets'));
 
         switch ($type) {
-            case self::SOCK_TCP:
+            case SocketType::TCP:
                 // TCP address should always be in lowercase
                 $address = \strtolower($address);
 
@@ -102,12 +76,9 @@ class SocketRelay extends Relay implements Stringable
 
                 break;
 
-            case self::SOCK_UNIX:
+            case SocketType::UNIX:
                 $port = null;
                 break;
-
-            default:
-                throw new InvalidArgumentException(\sprintf("Undefined connection type %s on '%s'", $type, $address));
         }
 
         $this->address = $address;
@@ -127,7 +98,7 @@ class SocketRelay extends Relay implements Stringable
 
     public function __toString(): string
     {
-        if ($this->type === self::SOCK_TCP) {
+        if ($this->type === SocketType::TCP) {
             return "tcp://{$this->address}:{$this->port}";
         }
 
@@ -147,7 +118,7 @@ class SocketRelay extends Relay implements Stringable
         return $this->port;
     }
 
-    public function getType(): int
+    public function getType(): SocketType
     {
         return $this->type;
     }
@@ -247,8 +218,8 @@ class SocketRelay extends Relay implements Stringable
      */
     public function connect(int $retries = self::RECONNECT_RETRIES, int $timeout = self::RECONNECT_TIMEOUT): bool
     {
-        assert($retries >= 1);
-        assert($timeout > 0);
+        \assert($retries >= 1);
+        \assert($timeout > 0);
 
         if ($this->isConnected()) {
             return true;
@@ -290,7 +261,7 @@ class SocketRelay extends Relay implements Stringable
      */
     public function close(): void
     {
-        if (! $this->isConnected()) {
+        if (!$this->isConnected()) {
             throw new RelayException("Unable to close socket '{$this}', socket already closed");
         }
 
@@ -300,7 +271,7 @@ class SocketRelay extends Relay implements Stringable
 
     private function createSocket(): Socket|false
     {
-        if ($this->type === self::SOCK_UNIX) {
+        if ($this->type === SocketType::UNIX) {
             return \socket_create(\AF_UNIX, \SOCK_STREAM, 0);
         }
 

@@ -49,7 +49,6 @@ final class ProtobufCodec implements CodecInterface
      * @psalm-suppress UnsafeInstantiation
      *
      * @param class-string<Message> $class
-     * @return Message
      */
     protected function create(string $class): Message
     {

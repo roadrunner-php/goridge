@@ -12,13 +12,14 @@ use Spiral\Goridge\RPC\Exception\CodecException;
 use Spiral\Goridge\RPC\Exception\ServiceException;
 use Spiral\Goridge\RPC\RPC as GoridgeRPC;
 use Spiral\Goridge\SocketRelay;
+use Spiral\Goridge\SocketType;
 
 abstract class RPC extends TestCase
 {
     public const GO_APP    = 'server';
     public const SOCK_ADDR = '127.0.0.1';
     public const SOCK_PORT = 7079;
-    public const SOCK_TYPE = SocketRelay::SOCK_TCP;
+    public const SOCK_TYPE = SocketType::TCP;
 
     public function testManualConnect(): void
     {

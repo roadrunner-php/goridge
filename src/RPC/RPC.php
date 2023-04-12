@@ -13,8 +13,11 @@ use Spiral\Goridge\RPC\Exception\ServiceException;
 
 class RPC implements RPCInterface
 {
-    private RelayInterface $relay;
-    private CodecInterface $codec;
+    /**
+     * RPC calls service prefix.
+     *
+     * @var non-empty-string|null
+     */
     private ?string $service = null;
 
     /**
@@ -22,10 +25,10 @@ class RPC implements RPCInterface
      */
     private static int $seq = 1;
 
-    public function __construct(RelayInterface $relay, CodecInterface $codec = null)
-    {
-        $this->relay = $relay;
-        $this->codec = $codec ?? new JsonCodec();
+    public function __construct(
+        private readonly RelayInterface $relay,
+        private CodecInterface $codec = new JsonCodec(),
+    ) {
     }
 
     /**
@@ -75,7 +78,7 @@ class RPC implements RPCInterface
     /**
      * @param non-empty-string $connection
      */
-    public static function create(string $connection, ?CodecInterface $codec = null): RPCInterface
+    public static function create(string $connection, CodecInterface $codec = new JsonCodec()): RPCInterface
     {
         $relay = Relay::create($connection);
 
@@ -93,7 +96,7 @@ class RPC implements RPCInterface
         if ($frame->hasFlag(Frame::ERROR)) {
             $name = $this->relay instanceof \Stringable
                 ? (string)$this->relay
-                : \get_class($this->relay);
+                : $this->relay::class;
 
             throw new ServiceException(\sprintf("Error '%s' on %s", $body, $name));
         }

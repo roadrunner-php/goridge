@@ -1,11 +1,5 @@
 <?php
 
-/**
- * Dead simple, high performance, drop-in bridge to Golang RPC with zero dependencies
- *
- * @author Valentin V
- */
-
 declare(strict_types=1);
 
 namespace Spiral\Goridge\Tests;
@@ -14,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Exception;
 use Spiral\Goridge\Relay;
 use Spiral\Goridge\SocketRelay;
+use Spiral\Goridge\SocketType;
 use Spiral\Goridge\StreamRelay;
 use Throwable;
 
@@ -82,7 +77,7 @@ class StaticFactoryTest extends TestCase
         $this->assertInstanceOf(SocketRelay::class, $relay);
         $this->assertSame('localhost', $relay->getAddress());
         $this->assertSame(0, $relay->getPort());
-        $this->assertSame(SocketRelay::SOCK_TCP, $relay->getType());
+        $this->assertSame(SocketType::TCP, $relay->getType());
     }
 
     public function testUnix(): void
@@ -91,7 +86,7 @@ class StaticFactoryTest extends TestCase
         $relay = Relay::create('unix:///tmp/rpc.sock');
         $this->assertInstanceOf(SocketRelay::class, $relay);
         $this->assertSame('/tmp/rpc.sock', $relay->getAddress());
-        $this->assertSame(SocketRelay::SOCK_UNIX, $relay->getType());
+        $this->assertSame(SocketType::UNIX, $relay->getType());
     }
 
     public function testPipes(): void

@@ -13,8 +13,7 @@ interface RPCInterface
      * Create RPC instance with service specific prefix.
      *
      * @psalm-pure
-     * @param string $service
-     * @return RPCInterface
+     * @param non-empty-string $service
      */
     public function withServicePrefix(string $service): self;
 
@@ -22,8 +21,6 @@ interface RPCInterface
      * Create RPC instance with service specific codec.
      *
      * @psalm-pure
-     * @param CodecInterface $codec
-     * @return RPCInterface
      */
     public function withCodec(CodecInterface $codec): self;
 

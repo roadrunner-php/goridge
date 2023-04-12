@@ -1,9 +1,9 @@
 on:
+  pull_request: null
   push:
     branches:
       - master
       - '*.*'
-  pull_request: null
 
 name: static analysis
 
