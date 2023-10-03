@@ -126,7 +126,7 @@ final class Frame
      * @return HeaderList
      * @internal
      *
-     * @psalm-suppress InvalidReturnStatement, InvalidReturnType
+     * @psalm-suppress LessSpecificReturnStatement, MoreSpecificReturnType
      */
     public static function readHeader(string $header): array
     {
