@@ -50,7 +50,9 @@ final class Frame
      * @var positive-int Flags for {@see $byte10}
      */
     public const BYTE10_STREAM = 0x01;
-    public const BYTE10_STOP = 0x02; // 2.9.0-alpha just streams
+    public const BYTE10_STOP = 0x02;
+    public const BYTE10_PING = 0x04;
+    public const BYTE10_PONG = 0x08;
 
     /**
      * @psalm-var FrameByte10Value
@@ -124,7 +126,7 @@ final class Frame
      * @return HeaderList
      * @internal
      *
-     * @psalm-suppress InvalidReturnStatement, InvalidReturnType
+     * @psalm-suppress LessSpecificReturnStatement, MoreSpecificReturnType
      */
     public static function readHeader(string $header): array
     {

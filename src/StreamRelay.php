@@ -18,7 +18,7 @@ use Spiral\Goridge\Exception\TransportException;
  * prefix:
  * [ flag       ][ message length, unsigned int 64bits, LittleEndian ]
  */
-class StreamRelay extends Relay
+class StreamRelay extends Relay implements BlockingRelayInterface
 {
     /**
      * @var resource
