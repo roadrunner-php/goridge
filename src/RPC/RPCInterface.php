@@ -6,6 +6,7 @@ namespace Spiral\Goridge\RPC;
 
 use Spiral\Goridge\Exception\GoridgeException;
 use Spiral\Goridge\RPC\Exception\RPCException;
+use Spiral\Goridge\RPC\Exception\ServiceException;
 
 interface RPCInterface
 {
@@ -31,6 +32,7 @@ interface RPCInterface
      *
      * @throws GoridgeException
      * @throws RPCException
+     * @throws ServiceException
      */
     public function call(string $method, mixed $payload, mixed $options = null): mixed;
 }
