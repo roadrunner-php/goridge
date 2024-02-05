@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Spiral\Goridge\RPC;
 
 use RuntimeException;
+use Spiral\Goridge\Exception\RelayException;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\MultiRelayHelper;
 use Spiral\Goridge\Relay;
@@ -21,7 +22,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     private array $freeRelays = [];
 
     /**
-     * @var array<int, RelayInterface>
+     * Occupied Relays alone is a map of seq to relay to make removal easier once a response is received.
+     * @var array<positive-int, RelayInterface>
      */
     private array $occupiedRelays = [];
 
@@ -137,10 +139,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         $relay = $this->getNextFreeRelay();
         $relay->send($this->packFrame($method, $payload));
-        $this->occupiedRelays[] = $relay;
         $seq = self::$seq;
-        $this->seqToRelayMap[$seq] = $relay;
         self::$seq++;
+        $this->occupiedRelays[$seq] = $relay;
+        $this->seqToRelayMap[$seq] = $relay;
         return $seq;
     }
 
@@ -203,11 +205,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
              * Thus we only re-add (and do so without searching for it first) if we don't have the response yet.
              */
         } else {
+            $this->freeRelays[] = $this->occupiedRelays[$seq];
+            unset($this->occupiedRelays[$seq]);
+
             $frame = $relay->waitFrame();
-            if (($index = array_search($relay, $this->occupiedRelays, true)) !== false) {
-                /** @psalm-suppress MixedPropertyTypeCoercion It's always a RelayInterface, never mixed */
-                $this->freeRelays[] = array_splice($this->occupiedRelays, $index, 1)[0];
-            }
         }
 
         if (count($frame->options) !== 2) {
@@ -244,6 +245,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             } else {
                 $seqsToDo[] = $seq;
                 $relays[] = $relay;
+                unset($this->occupiedRelays[$seq]);
             }
         }
 
@@ -268,8 +270,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 /** @var positive-int $seq */
                 $seq = array_splice($seqsToDo, $relayIndex, 1)[0];
 
-                $frame = $relay->waitFrame();
+                // Add before waitFrame() to make sure we keep track of the $relay
                 $this->freeRelays[] = $relay;
+                $frame = $relay->waitFrame();
 
                 yield $seq => $this->decodeResponse($frame, $relay, $options);
             }
@@ -292,7 +295,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 $indexKeyed = array_flip($index);
                 foreach ($this->occupiedRelaysIgnoreResponse as $relayIndex => $relay) {
                     if (isset($indexKeyed[$relayIndex])) {
-                        $relay->waitFrame();
+                        $this->tryFlushRelay($relay, true);
                         $this->freeRelays[] = $relay;
                     } else {
                         $occupiedRelaysIgnoreResponse[] = $relay;
@@ -304,21 +307,27 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             } elseif ($index !== false) {
                 /** @var RelayInterface $relay */
                 $relay = array_splice($this->occupiedRelaysIgnoreResponse, $index, 1)[0];
-                $relay->waitFrame();
+                $this->tryFlushRelay($relay, true);
                 return $relay;
             }
         }
 
         if (count($this->occupiedRelays) > 0) {
             // Check if the other relays have a free one
-            $index = MultiRelayHelper::findRelayWithMessage($this->occupiedRelays);
+
+            // This array_keys/array_values is so we can use socket_select/stream_select
+            $relayValues = array_values($this->occupiedRelays);
+            $relayKeys = array_keys($this->occupiedRelays);
+            $index = MultiRelayHelper::findRelayWithMessage($relayValues);
+            // To make sure nobody uses this
+            unset($relayValues);
 
             if ($index === false) {
                 if (count($this->occupiedRelaysIgnoreResponse) > 0) {
                     // Wait for an ignore-response relay to become free (the oldest since it makes the most sense)
                     /** @var RelayInterface $relay */
                     $relay = array_shift($this->occupiedRelaysIgnoreResponse);
-                    $relay->waitFrame();
+                    $this->tryFlushRelay($relay, true);
                     return $relay;
                 } else {
                     // Use the oldest occupied relay for this instead
@@ -331,20 +340,34 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 $index = $index[0];
             }
 
-            // Put response into buffer
-            /** @var RelayInterface $relay */
-            $relay = array_splice($this->occupiedRelays, $index, 1)[0];
-            $frame = $relay->waitFrame();
+            $key = $relayKeys[$index];
 
-            if (count($frame->options) === 2) {
-                /** @var positive-int $responseSeq */
-                $responseSeq = $frame->options[0];
-                $this->asyncResponseBuffer[$responseSeq] = $frame;
-            }
+            // Put response into buffer
+            $relay = $this->occupiedRelays[$key];
+            unset($this->occupiedRelays[$key]);
+            $this->tryFlushRelay($relay, true);
 
             return $relay;
         }
 
         throw new RuntimeException("No relays???");
+    }
+
+    private function tryFlushRelay(RelayInterface $relay, bool $saveResponse = false): void
+    {
+        try {
+            if (!$saveResponse) {
+                $relay->waitFrame();
+            } else {
+                $frame = $relay->waitFrame();
+                if (count($frame->options) === 2) {
+                    /** @var positive-int $responseSeq */
+                    $responseSeq = $frame->options[0];
+                    $this->asyncResponseBuffer[$responseSeq] = $frame;
+                }
+            }
+        } catch (RelayException $exception) {
+            // Intentionally left blank
+        }
     }
 }
