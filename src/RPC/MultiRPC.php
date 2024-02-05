@@ -47,10 +47,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      * @param array<int, RelayInterface> $relays
      */
     public function __construct(
-        array          $relays,
+        array $relays,
         CodecInterface $codec = new JsonCodec()
-    )
-    {
+    ) {
         $this->freeRelays = $relays;
         parent::__construct($codec);
     }
@@ -66,13 +65,30 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         for ($i = 0; $i < $count; $i++) {
             $relays[] = Relay::create($connection);
-            if ($relays[$i] instanceof SocketRelay) {
-                // Force connect
-                $relays[$i]->connect();
-            }
         }
 
         return new self($relays, $codec);
+    }
+
+    /**
+     * Force-connects all SocketRelays.
+     * Does nothing if no SocketRelay.
+     */
+    public function preConnectRelays(): void
+    {
+        if (count($this->freeRelays) === 0) {
+            return;
+        }
+
+        if (!$this->freeRelays[0] instanceof SocketRelay) {
+            return;
+        }
+
+        foreach ($this->freeRelays as $relay) {
+            assert($relay instanceof SocketRelay);
+            // Force connect
+            $relay->connect();
+        }
     }
 
 
@@ -176,22 +192,22 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
     public function getResponse(int $seq, mixed $options = null): mixed
     {
-        if (($relay = $this->seqToRelayMap[$seq] ?? null) !== null) {
-            if (($frame = $this->asyncResponseBuffer[$seq] ?? null) !== null) {
-                unset($this->asyncResponseBuffer[$seq]);
-                /**
-                 * We can assume through @see MultiRPC::getNextFreeRelay() that a relay whose response is already
-                 * in this buffer has also been added to freeRelays (or is otherwise occupied).
-                 * Thus we only re-add (and do so without searching for it first) if we don't have the response yet.
-                 */
-            } else {
-                $frame = $relay->waitFrame();
-                if (($index = array_search($relay, $this->occupiedRelays, true)) !== false) {
-                    $this->freeRelays[] = array_slice($this->occupiedRelays, $index, 1)[0];
-                }
-            }
+        $relay = $this->seqToRelayMap[$seq] ?? throw new RPCException('Invalid Seq, unknown');
+        unset($this->seqToRelayMap[$seq]);
+
+        if (($frame = $this->asyncResponseBuffer[$seq] ?? null) !== null) {
+            unset($this->asyncResponseBuffer[$seq]);
+            /**
+             * We can assume through @see MultiRPC::getNextFreeRelay() that a relay whose response is already
+             * in this buffer has also been added to freeRelays (or is otherwise occupied).
+             * Thus we only re-add (and do so without searching for it first) if we don't have the response yet.
+             */
         } else {
-            throw new RPCException('Invalid Seq, unknown');
+            $frame = $relay->waitFrame();
+            if (($index = array_search($relay, $this->occupiedRelays, true)) !== false) {
+                /** @psalm-suppress MixedPropertyTypeCoercion It's always a RelayInterface, never mixed */
+                $this->freeRelays[] = array_splice($this->occupiedRelays, $index, 1)[0];
+            }
         }
 
         if (count($frame->options) !== 2) {
@@ -205,9 +221,65 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         return $this->decodeResponse($frame, $relay, $options);
     }
 
+    public function getResponses(array $seqs, mixed $options = null): iterable
+    {
+        $seqsToDo = [];
+        $relays = [];
+
+        // Check for seqs that are already in the buffer
+        foreach ($seqs as $seq) {
+            /** @var positive-int $seq */
+            $relay = $this->seqToRelayMap[$seq] ?? throw new RPCException('Invalid Seq, unknown');
+            unset($this->seqToRelayMap[$seq]);
+
+            if (($frame = $this->asyncResponseBuffer[$seq] ?? null) !== null) {
+                unset($this->asyncResponseBuffer[$seq]);
+                /**
+                 * We can assume through @see MultiRPC::getNextFreeRelay() that a relay whose response is already
+                 * in this buffer has also been added to freeRelays (or is otherwise occupied).
+                 * Thus we only re-add (and do so without searching for it first) if we don't have the response yet.
+                 */
+
+                yield $seq => $this->decodeResponse($frame, $relay, $options);
+            } else {
+                $seqsToDo[] = $seq;
+                $relays[] = $relay;
+            }
+        }
+
+        $timeoutInMicroseconds = 0;
+        while (count($seqsToDo) > 0) {
+            // Do a first pass without a timeout. Maybe there's already most responses which would make a timeout unnecessary.
+            $index = MultiRelayHelper::findRelayWithMessage($relays, $timeoutInMicroseconds);
+            $timeoutInMicroseconds = 100;
+
+            if ($index === false) {
+                continue;
+            }
+
+            if (!is_array($index)) {
+                $index = [$index];
+            }
+
+            foreach ($index as $relayIndex) {
+                // Splice to update indices
+                /** @var RelayInterface $relay */
+                $relay = array_splice($relays, $relayIndex, 1)[0];
+                /** @var positive-int $seq */
+                $seq = array_splice($seqsToDo, $relayIndex, 1)[0];
+
+                $frame = $relay->waitFrame();
+                $this->freeRelays[] = $relay;
+
+                yield $seq => $this->decodeResponse($frame, $relay, $options);
+            }
+        }
+    }
+
     private function getNextFreeRelay(): RelayInterface
     {
         if (count($this->freeRelays) > 0) {
+            /** @psalm-return RelayInterface */
             return array_pop($this->freeRelays);
         }
 
@@ -230,7 +302,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 $this->occupiedRelaysIgnoreResponse = $occupiedRelaysIgnoreResponse;
                 return array_pop($this->freeRelays);
             } elseif ($index !== false) {
-                $relay = array_slice($this->occupiedRelaysIgnoreResponse, $index, 1)[0];
+                /** @var RelayInterface $relay */
+                $relay = array_splice($this->occupiedRelaysIgnoreResponse, $index, 1)[0];
                 $relay->waitFrame();
                 return $relay;
             }
@@ -243,6 +316,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             if ($index === false) {
                 if (count($this->occupiedRelaysIgnoreResponse) > 0) {
                     // Wait for an ignore-response relay to become free (the oldest since it makes the most sense)
+                    /** @var RelayInterface $relay */
                     $relay = array_shift($this->occupiedRelaysIgnoreResponse);
                     $relay->waitFrame();
                     return $relay;
@@ -258,7 +332,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             }
 
             // Put response into buffer
-            $relay = array_slice($this->occupiedRelays, $index, 1)[0];
+            /** @var RelayInterface $relay */
+            $relay = array_splice($this->occupiedRelays, $index, 1)[0];
             $frame = $relay->waitFrame();
 
             if (count($frame->options) === 2) {

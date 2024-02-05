@@ -18,7 +18,7 @@ class MultiRelayHelper
      *  - an array of indices if multiple
      *  - or false if none
      */
-    public static function findRelayWithMessage(array $relays): array|bool|int
+    public static function findRelayWithMessage(array $relays, int $timeoutInMicroseconds = 0): array|bool|int
     {
         if (count($relays) === 0) {
             return false;
@@ -44,7 +44,7 @@ class MultiRelayHelper
             $socketIds = array_flip(array_map(fn(Socket $socket) => spl_object_id($socket), $sockets));
             $writes = null;
             $except = null;
-            $changes = socket_select($sockets, $writes, $except, 0);
+            $changes = socket_select($sockets, $writes, $except, 0, $timeoutInMicroseconds);
 
             if ($changes > 1) {
                 return array_map(fn(Socket $socket) => $socketIds[spl_object_id($socket)], $sockets);
@@ -67,7 +67,7 @@ class MultiRelayHelper
             $streamIds = array_flip(array_map(fn($resource) => (string)$resource, $streams));
             $writes = null;
             $except = null;
-            $changes = stream_select($streams, $writes, $except, 0);
+            $changes = stream_select($streams, $writes, $except, 0, $timeoutInMicroseconds);
 
             if ($changes > 1) {
                 return array_map(fn($resource) => $streamIds[(string)$resource], $streams);

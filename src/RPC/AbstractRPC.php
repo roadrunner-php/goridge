@@ -36,7 +36,7 @@ abstract class AbstractRPC implements RPCInterface
     /**
      * @psalm-pure
      */
-    public function withServicePrefix(string $service): RPCInterface
+    public function withServicePrefix(string $service): self
     {
         /** @psalm-suppress ImpureVariable */
         $rpc = clone $this;
@@ -48,7 +48,7 @@ abstract class AbstractRPC implements RPCInterface
     /**
      * @psalm-pure
      */
-    public function withCodec(CodecInterface $codec): RPCInterface
+    public function withCodec(CodecInterface $codec): self
     {
         /** @psalm-suppress ImpureVariable */
         $rpc = clone $this;
