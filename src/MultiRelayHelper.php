@@ -33,7 +33,7 @@ class MultiRelayHelper
                 // A non-connected relay implies that it is free. We can eat the connection-cost if it means
                 // we'll have more Relays available.
                 // Not doing this would also potentially result in never using the relay in the first place.
-                if($relay->socket === null){
+                if ($relay->socket === null) {
                     return $index;
                 }
 

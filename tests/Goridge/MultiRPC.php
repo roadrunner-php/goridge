@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Goridge;
 
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
@@ -20,6 +21,7 @@ abstract class MultiRPC extends TestCase
     public const SOCK_ADDR = '127.0.0.1';
     public const SOCK_PORT = 7079;
     public const SOCK_TYPE = SocketType::TCP;
+    private GoridgeMultiRPC $rpc;
 
     public function testManualConnect(): void
     {
@@ -43,6 +45,8 @@ abstract class MultiRPC extends TestCase
         foreach ($relays as $relay) {
             $this->assertTrue($relay->isConnected());
         }
+
+        $this->assertFreeRelaysCorrectNumber($conn);
     }
 
     public function testReconnect(): void
@@ -65,105 +69,96 @@ abstract class MultiRPC extends TestCase
 
     public function testPingPong(): void
     {
-        $conn = $this->makeRPC();
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
+        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
     }
 
     public function testPingPongAsync(): void
     {
-        $conn = $this->makeRPC();
-        $id = $conn->callAsync('Service.Ping', 'ping');
-        $this->assertSame('pong', $conn->getResponse($id));
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $this->assertSame('pong', $this->rpc->getResponse($id));
     }
 
     public function testPrefixPingPong(): void
     {
-        $conn = $this->makeRPC()->withServicePrefix('Service');
-        $this->assertSame('pong', $conn->call('Ping', 'ping'));
+        $this->rpc = $this->makeRPC()->withServicePrefix('Service');
+        $this->assertSame('pong', $this->rpc->call('Ping', 'ping'));
     }
 
     public function testPrefixPingPongAsync(): void
     {
-        $conn = $this->makeRPC()->withServicePrefix('Service');
-        $id = $conn->callAsync('Ping', 'ping');
-        $this->assertSame('pong', $conn->getResponse($id));
+        $this->rpc = $this->makeRPC()->withServicePrefix('Service');
+        $id = $this->rpc->callAsync('Ping', 'ping');
+        $this->assertSame('pong', $this->rpc->getResponse($id));
     }
 
     public function testPingNull(): void
     {
-        $conn = $this->makeRPC();
-        $this->assertSame('', $conn->call('Service.Ping', 'not-ping'));
+        $this->assertSame('', $this->rpc->call('Service.Ping', 'not-ping'));
     }
 
     public function testPingNullAsync(): void
     {
-        $conn = $this->makeRPC();
-        $id = $conn->callAsync('Service.Ping', 'not-ping');
-        $this->assertSame('', $conn->getResponse($id));
+        $id = $this->rpc->callAsync('Service.Ping', 'not-ping');
+        $this->assertSame('', $this->rpc->getResponse($id));
     }
 
     public function testNegate(): void
     {
-        $conn = $this->makeRPC();
-        $this->assertSame(-10, $conn->call('Service.Negate', 10));
+        $this->assertSame(-10, $this->rpc->call('Service.Negate', 10));
     }
 
     public function testNegateAsync(): void
     {
-        $conn = $this->makeRPC();
-        $id = $conn->callAsync('Service.Negate', 10);
-        $this->assertSame(-10, $conn->getResponse($id));
+        $id = $this->rpc->callAsync('Service.Negate', 10);
+        $this->assertSame(-10, $this->rpc->getResponse($id));
     }
 
     public function testNegateNegative(): void
     {
-        $conn = $this->makeRPC();
-        $this->assertSame(10, $conn->call('Service.Negate', -10));
+        $this->assertSame(10, $this->rpc->call('Service.Negate', -10));
     }
 
     public function testNegateNegativeAsync(): void
     {
-        $conn = $this->makeRPC();
-        $id = $conn->callAsync('Service.Negate', -10);
-        $this->assertSame(10, $conn->getResponse($id));
+        $id = $this->rpc->callAsync('Service.Negate', -10);
+        $this->assertSame(10, $this->rpc->getResponse($id));
     }
 
     public function testInvalidService(): void
     {
         $this->expectException(ServiceException::class);
-        $conn = $this->makeRPC()->withServicePrefix('Service2');
-        $this->assertSame('pong', $conn->call('Ping', 'ping'));
+        $this->rpc = $this->makeRPC()->withServicePrefix('Service2');
+        $this->assertSame('pong', $this->rpc->call('Ping', 'ping'));
     }
 
     public function testInvalidServiceAsync(): void
     {
-        $conn = $this->makeRPC()->withServicePrefix('Service2');
-        $id = $conn->callAsync('Ping', 'ping');
+        $this->rpc = $this->makeRPC()->withServicePrefix('Service2');
+        $id = $this->rpc->callAsync('Ping', 'ping');
         $this->expectException(ServiceException::class);
-        $this->assertSame('pong', $conn->getResponse($id));
+        $this->assertSame('pong', $this->rpc->getResponse($id));
     }
 
     public function testInvalidMethod(): void
     {
         $this->expectException(ServiceException::class);
-        $conn = $this->makeRPC()->withServicePrefix('Service');
-        $this->assertSame('pong', $conn->call('Ping2', 'ping'));
+        $this->rpc = $this->makeRPC()->withServicePrefix('Service');
+        $this->assertSame('pong', $this->rpc->call('Ping2', 'ping'));
     }
 
     public function testInvalidMethodAsync(): void
     {
-        $conn = $this->makeRPC()->withServicePrefix('Service');
-        $id = $conn->callAsync('Ping2', 'ping');
+        $this->rpc = $this->makeRPC()->withServicePrefix('Service');
+        $id = $this->rpc->callAsync('Ping2', 'ping');
         $this->expectException(ServiceException::class);
-        $this->assertSame('pong', $conn->getResponse($id));
+        $this->assertSame('pong', $this->rpc->getResponse($id));
     }
 
     public function testLongEcho(): void
     {
-        $conn = $this->makeRPC();
         $payload = base64_encode(random_bytes(65000 * 5));
 
-        $resp = $conn->call('Service.Echo', $payload);
+        $resp = $this->rpc->call('Service.Echo', $payload);
 
         $this->assertSame(strlen($payload), strlen($resp));
         $this->assertSame(md5($payload), md5($resp));
@@ -171,11 +166,10 @@ abstract class MultiRPC extends TestCase
 
     public function testLongEchoAsync(): void
     {
-        $conn = $this->makeRPC();
         $payload = base64_encode(random_bytes(65000 * 5));
 
-        $id = $conn->callAsync('Service.Echo', $payload);
-        $resp = $conn->getResponse($id);
+        $id = $this->rpc->callAsync('Service.Echo', $payload);
+        $resp = $this->rpc->getResponse($id);
 
         $this->assertSame(strlen($payload), strlen($resp));
         $this->assertSame(md5($payload), md5($resp));
@@ -186,10 +180,9 @@ abstract class MultiRPC extends TestCase
         $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('unknown Raw payload type');
 
-        $conn = $this->makeRPC();
         $payload = base64_encode(random_bytes(65000 * 5));
 
-        $resp = $conn->withCodec(new RawCodec())->call(
+        $resp = $this->rpc->withCodec(new RawCodec())->call(
             'Service.Echo',
             $payload
         );
@@ -200,10 +193,9 @@ abstract class MultiRPC extends TestCase
 
     public function testConvertExceptionAsync(): void
     {
-        $conn = $this->makeRPC();
         $payload = base64_encode(random_bytes(65000 * 5));
 
-        $id = $conn->withCodec(new RawCodec())->callAsync(
+        $id = $this->rpc->withCodec(new RawCodec())->callAsync(
             'Service.Echo',
             $payload
         );
@@ -211,19 +203,17 @@ abstract class MultiRPC extends TestCase
         $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('unknown Raw payload type');
 
-        $resp = $conn->getResponse($id);
+        $resp = $this->rpc->getResponse($id);
 
         $this->assertSame(strlen($payload), strlen($resp));
         $this->assertSame(md5($payload), md5($resp));
     }
 
-
     public function testRawBody(): void
     {
-        $conn = $this->makeRPC();
         $payload = random_bytes(100);
 
-        $resp = $conn->withCodec(new RawCodec())->call(
+        $resp = $this->rpc->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload
         );
@@ -234,14 +224,13 @@ abstract class MultiRPC extends TestCase
 
     public function testRawBodyAsync(): void
     {
-        $conn = $this->makeRPC();
         $payload = random_bytes(100);
 
-        $id = $conn->withCodec(new RawCodec())->callAsync(
+        $id = $this->rpc->withCodec(new RawCodec())->callAsync(
             'Service.EchoBinary',
             $payload
         );
-        $resp = $conn->getResponse($id);
+        $resp = $this->rpc->getResponse($id);
 
         $this->assertSame(strlen($payload), strlen($resp));
         $this->assertSame(md5($payload), md5($resp));
@@ -249,10 +238,9 @@ abstract class MultiRPC extends TestCase
 
     public function testLongRawBody(): void
     {
-        $conn = $this->makeRPC();
         $payload = random_bytes(65000 * 1000);
 
-        $resp = $conn->withCodec(new RawCodec())->call(
+        $resp = $this->rpc->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload
         );
@@ -263,14 +251,13 @@ abstract class MultiRPC extends TestCase
 
     public function testLongRawBodyAsync(): void
     {
-        $conn = $this->makeRPC();
         $payload = random_bytes(65000 * 1000);
 
-        $id = $conn->withCodec(new RawCodec())->callAsync(
+        $id = $this->rpc->withCodec(new RawCodec())->callAsync(
             'Service.EchoBinary',
             $payload
         );
-        $resp = $conn->getResponse($id);
+        $resp = $this->rpc->getResponse($id);
 
         $this->assertSame(strlen($payload), strlen($resp));
         $this->assertSame(md5($payload), md5($resp));
@@ -278,9 +265,7 @@ abstract class MultiRPC extends TestCase
 
     public function testPayload(): void
     {
-        $conn = $this->makeRPC();
-
-        $resp = $conn->call(
+        $resp = $this->rpc->call(
             'Service.Process',
             [
                 'Name' => 'wolfy-j',
@@ -300,16 +285,14 @@ abstract class MultiRPC extends TestCase
 
     public function testPayloadAsync(): void
     {
-        $conn = $this->makeRPC();
-
-        $id = $conn->callAsync(
+        $id = $this->rpc->callAsync(
             'Service.Process',
             [
                 'Name' => 'wolfy-j',
                 'Value' => 18
             ]
         );
-        $resp = $conn->getResponse($id);
+        $resp = $this->rpc->getResponse($id);
 
         $this->assertSame(
             [
@@ -326,25 +309,21 @@ abstract class MultiRPC extends TestCase
         $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('unknown Raw payload type');
 
-        $conn = $this->makeRPC();
-        $conn->withCodec(new RawCodec())->call('Service.Process', 'raw');
+        $this->rpc->withCodec(new RawCodec())->call('Service.Process', 'raw');
     }
 
     public function testBadPayloadAsync(): void
     {
-        $conn = $this->makeRPC();
-        $id = $conn->withCodec(new RawCodec())->callAsync('Service.Process', 'raw');
+        $id = $this->rpc->withCodec(new RawCodec())->callAsync('Service.Process', 'raw');
 
         $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('unknown Raw payload type');
-        $resp = $conn->getResponse($id);
+        $resp = $this->rpc->getResponse($id);
     }
 
     public function testPayloadWithMap(): void
     {
-        $conn = $this->makeRPC();
-
-        $resp = $conn->call(
+        $resp = $this->rpc->call(
             'Service.Process',
             [
                 'Name' => 'wolfy-j',
@@ -366,9 +345,7 @@ abstract class MultiRPC extends TestCase
 
     public function testPayloadWithMapAsync(): void
     {
-        $conn = $this->makeRPC();
-
-        $id = $conn->callAsync(
+        $id = $this->rpc->callAsync(
             'Service.Process',
             [
                 'Name' => 'wolfy-j',
@@ -379,7 +356,7 @@ abstract class MultiRPC extends TestCase
                 ]
             ]
         );
-        $resp = $conn->getResponse($id);
+        $resp = $this->rpc->getResponse($id);
 
         $this->assertIsArray($resp['Keys']);
         $this->assertArrayHasKey('value', $resp['Keys']);
@@ -391,9 +368,7 @@ abstract class MultiRPC extends TestCase
 
     public function testBrokenPayloadMap(): void
     {
-        $conn = $this->makeRPC();
-
-        $id = $conn->callAsync(
+        $id = $this->rpc->callAsync(
             'Service.Process',
             [
                 'Name' => 'wolfy-j',
@@ -403,74 +378,73 @@ abstract class MultiRPC extends TestCase
         );
 
         $this->expectException(ServiceException::class);
-        $resp = $conn->getResponse($id);
+        $resp = $this->rpc->getResponse($id);
     }
 
     public function testJsonException(): void
     {
         $this->expectException(CodecException::class);
 
-        $conn = $this->makeRPC();
-
-        $conn->call('Service.Process', random_bytes(256));
+        $this->rpc->call('Service.Process', random_bytes(256));
     }
 
     public function testJsonExceptionAsync(): void
     {
         $this->expectException(CodecException::class);
 
-        $conn = $this->makeRPC();
-
-        $conn->callAsync('Service.Process', random_bytes(256));
+        $this->rpc->callAsync('Service.Process', random_bytes(256));
     }
 
     public function testJsonExceptionIgnoreResponse(): void
     {
         $this->expectException(CodecException::class);
 
-        $conn = $this->makeRPC();
-
-        $conn->callIgnoreResponse('Service.Process', random_bytes(256));
+        $this->rpc->callIgnoreResponse('Service.Process', random_bytes(256));
     }
 
     public function testSleepEcho(): void
     {
-        $conn = $this->makeRPC();
         $time = hrtime(true);
-        $this->assertSame('Hello', $conn->call('Service.SleepEcho', 'Hello'));
+        $this->assertSame('Hello', $this->rpc->call('Service.SleepEcho', 'Hello'));
         // sleep is 100ms, so we check if we are further along than 100ms
         $this->assertGreaterThanOrEqual($time + (100 * 1e6), hrtime(true));
     }
 
     public function testSleepEchoAsync(): void
     {
-        $conn = $this->makeRPC();
+
         $time = hrtime(true);
-        $id = $conn->callAsync('Service.SleepEcho', 'Hello');
+        $id = $this->rpc->callAsync('Service.SleepEcho', 'Hello');
         // hrtime is in nanoseconds, and at most expect 100 microseconds (sleep is 100ms)
         $this->assertLessThanOrEqual($time + (100 * 1e3), hrtime(true));
-        $this->assertFalse($conn->hasResponse($id));
-        $this->assertSame('Hello', $conn->getResponse($id));
+        $this->assertFalse($this->rpc->hasResponse($id));
+        $this->assertSame('Hello', $this->rpc->getResponse($id));
         // sleep is 100ms, so we check if we are further along than 100ms
         $this->assertGreaterThanOrEqual($time + (100 * 1e6), hrtime(true));
     }
 
     public function testSleepEchoIgnoreResponse(): void
     {
-        $conn = $this->makeRPC();
         $time = hrtime(true);
-        $conn->callIgnoreResponse('Service.SleepEcho', 'Hello');
+        $this->rpc->callIgnoreResponse('Service.SleepEcho', 'Hello');
         // hrtime is in nanoseconds, and at most expect 100 microseconds (sleep is 100ms)
         $this->assertLessThanOrEqual($time + (100 * 1e3), hrtime(true));
     }
 
     public function testCannotGetSameResponseTwice(): void
     {
-        $conn = $this->makeRPC();
-        $id = $conn->callAsync('Service.Ping', 'ping');
-        $this->assertSame('pong', $conn->getResponse($id));
+
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $this->assertSame('pong', $this->rpc->getResponse($id));
+        $this->assertFreeRelaysCorrectNumber($this->rpc);
         $this->expectException(RPCException::class);
         $this->expectExceptionMessage('Invalid Seq, unknown');
+        $this->assertSame('pong', $this->rpc->getResponse($id));
+    }
+
+    protected function setUp(): void
+    {
+        $this->rpc = $this->makeRPC();
     }
 
     /**
@@ -491,5 +465,17 @@ abstract class MultiRPC extends TestCase
     protected function makeRelay(): RelayInterface
     {
         return new SocketRelay(static::SOCK_ADDR, static::SOCK_PORT, static::SOCK_TYPE);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->assertFreeRelaysCorrectNumber($this->rpc);
+    }
+
+    protected function assertFreeRelaysCorrectNumber(GoridgeMultiRPC $rpc): void
+    {
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $property->setAccessible(true);
+        $this->assertSame(10, count($property->getValue($rpc)));
     }
 }
