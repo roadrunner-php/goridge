@@ -433,13 +433,27 @@ abstract class MultiRPC extends TestCase
 
     public function testCannotGetSameResponseTwice(): void
     {
-
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $this->assertSame('pong', $this->rpc->getResponse($id));
         $this->assertFreeRelaysCorrectNumber($this->rpc);
         $this->expectException(RPCException::class);
         $this->expectExceptionMessage('Invalid Seq, unknown');
         $this->assertSame('pong', $this->rpc->getResponse($id));
+    }
+
+    public function testCanCallMoreTimesThanRelays(): void
+    {
+        $ids = [];
+
+        for ($i = 0; $i < 50; $i++) {
+            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        }
+
+        foreach ($this->rpc->getResponses($ids) as $response) {
+            $this->assertSame('pong', $response);
+        }
+
+        $this->assertFreeRelaysCorrectNumber($this->rpc);
     }
 
     protected function setUp(): void
