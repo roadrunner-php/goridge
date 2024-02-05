@@ -10,22 +10,36 @@ use function socket_select;
 class MultiRelayHelper
 {
     /**
+     * @param array<int, RelayInterface> $relays
+     * @return int|int[]|false
      * @internal
      * Returns either
      *  - a single index if only one relay has changed state
      *  - an array of indices if multiple
      *  - or false if none
-     * @param RelayInterface[] $relays
-     * @return int|array|false
      */
-    public static function findRelayWithMessage(array $relays): int|array|false
+    public static function findRelayWithMessage(array $relays): array|bool|int
     {
         if (count($relays) === 0) {
             return false;
         }
 
         if ($relays[0] instanceof SocketRelay) {
-            $sockets = array_map(fn(SocketRelay $relay) => $relay->socket, $relays);
+            $sockets = [];
+            foreach ($relays as $index => $relay) {
+                assert($relay instanceof SocketRelay);
+
+                // A quick-return for a SocketRelay that is not connected yet.
+                // A non-connected relay implies that it is free. We can eat the connection-cost if it means
+                // we'll have more Relays available.
+                // Not doing this would also potentially result in never using the relay in the first place.
+                if($relay->socket === null){
+                    return $index;
+                }
+
+                $sockets[] = $relay->socket;
+            }
+
             // Map of "id" => index
             $socketIds = array_flip(array_map(fn(Socket $socket) => spl_object_id($socket), $sockets));
             $writes = null;
@@ -43,8 +57,12 @@ class MultiRelayHelper
         }
 
         if ($relays[0] instanceof StreamRelay) {
-            /** @var resource[] $streams */
-            $streams = array_map(fn(StreamRelay $relay) => $relay->in, $relays);
+            $streams = [];
+            foreach ($relays as $relay) {
+                assert($relay instanceof StreamRelay);
+                $streams[] = $relay->in;
+            }
+
             // Map of "id" => index
             $streamIds = array_flip(array_map(fn($resource) => (string)$resource, $streams));
             $writes = null;
