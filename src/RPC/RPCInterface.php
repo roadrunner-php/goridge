@@ -26,7 +26,7 @@ interface RPCInterface
     public function withCodec(CodecInterface $codec): self;
 
     /**
-     * Invoke remove RoadRunner service method using given payload (free form).
+     * Invoke remote RoadRunner service method using given payload (free form).
      *
      * @param non-empty-string $method
      *

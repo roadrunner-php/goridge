@@ -22,8 +22,11 @@ class StreamRelay extends Relay implements BlockingRelayInterface
 {
     /**
      * @var resource
+     * @internal
+     * This isn't really ideal but there's no easy way since we need access to the underlying stream
+     * to do a stream_select across multiple StreamRelays.
      */
-    private $in;
+    public $in;
 
     /**
      * @var resource
