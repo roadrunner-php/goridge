@@ -38,7 +38,12 @@ class SocketRelay extends Relay implements Stringable
     /** @var PortType */
     private readonly ?int $port;
     private readonly SocketType $type;
-    private ?Socket $socket = null;
+    /**
+     * @internal
+     * This isn't really ideal but there's no easy way since we need access to the underlying socket
+     * to do a socket_select across multiple SocketRelays.
+     */
+    public ?Socket $socket = null;
 
     /**
      * Example:

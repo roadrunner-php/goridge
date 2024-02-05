@@ -4,55 +4,21 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\RPC;
 
-use Spiral\Goridge\Frame;
 use Spiral\Goridge\Relay;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\JsonCodec;
 use Spiral\Goridge\RPC\Exception\RPCException;
-use Spiral\Goridge\RPC\Exception\ServiceException;
+use function count;
 
-class RPC implements RPCInterface
+class RPC extends AbstractRPC
 {
-    /**
-     * RPC calls service prefix.
-     *
-     * @var non-empty-string|null
-     */
-    private ?string $service = null;
-
-    /**
-     * @var positive-int
-     */
-    private static int $seq = 1;
 
     public function __construct(
         private readonly RelayInterface $relay,
-        private CodecInterface $codec = new JsonCodec(),
-    ) {
-    }
-
-    /**
-     * @psalm-pure
-     */
-    public function withServicePrefix(string $service): RPCInterface
+        CodecInterface          $codec = new JsonCodec(),
+    )
     {
-        /** @psalm-suppress ImpureVariable */
-        $rpc = clone $this;
-        $rpc->service = $service;
-
-        return $rpc;
-    }
-
-    /**
-     * @psalm-pure
-     */
-    public function withCodec(CodecInterface $codec): RPCInterface
-    {
-        /** @psalm-suppress ImpureVariable */
-        $rpc = clone $this;
-        $rpc->codec = $codec;
-
-        return $rpc;
+        parent::__construct($codec);
     }
 
     public function call(string $method, mixed $payload, mixed $options = null): mixed
@@ -62,7 +28,7 @@ class RPC implements RPCInterface
         // wait for the frame confirmation
         $frame = $this->relay->waitFrame();
 
-        if (\count($frame->options) !== 2) {
+        if (count($frame->options) !== 2) {
             throw new RPCException('Invalid RPC frame, options missing');
         }
 
@@ -72,7 +38,7 @@ class RPC implements RPCInterface
 
         self::$seq++;
 
-        return $this->decodeResponse($frame, $options);
+        return $this->decodeResponse($frame, $this->relay, $options);
     }
 
     /**
@@ -83,37 +49,5 @@ class RPC implements RPCInterface
         $relay = Relay::create($connection);
 
         return new self($relay, $codec);
-    }
-
-    /**
-     * @throws Exception\ServiceException
-     */
-    private function decodeResponse(Frame $frame, mixed $options = null): mixed
-    {
-        // exclude method name
-        $body = \substr((string)$frame->payload, $frame->options[1]);
-
-        if ($frame->hasFlag(Frame::ERROR)) {
-            $name = $this->relay instanceof \Stringable
-                ? (string)$this->relay
-                : $this->relay::class;
-
-            throw new ServiceException(\sprintf("Error '%s' on %s", $body, $name));
-        }
-
-        return $this->codec->decode($body, $options);
-    }
-
-    /**
-     * @param non-empty-string $method
-     */
-    private function packFrame(string $method, mixed $payload): Frame
-    {
-        if ($this->service !== null) {
-            $method = $this->service . '.' . \ucfirst($method);
-        }
-
-        $body = $method . $this->codec->encode($payload);
-        return new Frame($body, [self::$seq, \strlen($method)], $this->codec->getIndex());
     }
 }
