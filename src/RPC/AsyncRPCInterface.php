@@ -46,8 +46,18 @@ interface AsyncRPCInterface extends RPCInterface
 
     /**
      * Fetch the response for the "ID" obtained through @see AsyncRPCInterface::callAsync() .
+     * @param positive-int $seq
      * @throws RPCException
      * @throws ServiceException
      */
     public function getResponse(int $seq, mixed $options = null): mixed;
+
+    /**
+     * Fetches the responses for the "ID"s obtained through @see AsyncRPCInterface::callAsync()
+     * and returns a map of "ID" => Response.
+     *
+     * @param array<array-key, positive-int> $seqs
+     * @return iterable<positive-int, mixed>
+     */
+    public function getResponses(array $seqs, mixed $options = null): iterable;
 }
