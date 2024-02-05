@@ -16,17 +16,17 @@ use Spiral\Goridge\SocketRelay;
 class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 {
     /**
-     * @var RelayInterface[]
+     * @var array<int, RelayInterface>
      */
     private array $freeRelays = [];
 
     /**
-     * @var RelayInterface[]
+     * @var array<int, RelayInterface>
      */
     private array $occupiedRelays = [];
 
     /**
-     * @var RelayInterface[]
+     * @var array<int, RelayInterface>
      */
     private array $occupiedRelaysIgnoreResponse = [];
 
@@ -43,8 +43,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      */
     private array $asyncResponseBuffer = [];
 
+    /**
+     * @param array<int, RelayInterface> $relays
+     */
     public function __construct(
-        /** @var RelayInterface[] $relays */
         array          $relays,
         CodecInterface $codec = new JsonCodec()
     )
@@ -53,6 +55,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         parent::__construct($codec);
     }
 
+    /**
+     * @param non-empty-string $connection
+     * @param positive-int $count
+     */
     public static function create(string $connection, int $count = 50, CodecInterface $codec = new JsonCodec()): self
     {
         assert($count > 0);
@@ -108,6 +114,11 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
     public function callAsync(string $method, mixed $payload): int
     {
+        // Flush buffer if someone doesn't call getResponse
+        if (count($this->asyncResponseBuffer) > 1000) {
+            $this->asyncResponseBuffer = [];
+        }
+
         $relay = $this->getNextFreeRelay();
         $relay->send($this->packFrame($method, $payload));
         $this->occupiedRelays[] = $relay;
@@ -133,6 +144,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function hasAnyResponse(array $seqs): array
     {
         $relays = [];
+        /** @var array<int, positive-int> $relayIndexToSeq */
         $relayIndexToSeq = [];
         $seqsWithResponse = [];
 
@@ -140,8 +152,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             if (isset($this->asyncResponseBuffer[$seq])) {
                 $seqsWithResponse[] = $seq;
             } elseif (isset($this->seqToRelayMap[$seq])) {
+                $relayIndexToSeq[count($relays)] = $seq;
                 $relays[] = $this->seqToRelayMap[$seq];
-                $relayIndexToSeq[count($relays) - 1] = $seq;
             }
         }
 
@@ -155,7 +167,11 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             $index = [$index];
         }
 
-        return [...$seqsWithResponse, array_map(fn($in) => $relayIndexToSeq[$in], $index)];
+        foreach ($index as $relayIndex) {
+            $seqsWithResponse[] = $relayIndexToSeq[$relayIndex];
+        }
+
+        return $seqsWithResponse;
     }
 
     public function getResponse(int $seq, mixed $options = null): mixed
@@ -246,6 +262,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             $frame = $relay->waitFrame();
 
             if (count($frame->options) === 2) {
+                /** @var positive-int $responseSeq */
                 $responseSeq = $frame->options[0];
                 $this->asyncResponseBuffer[$responseSeq] = $frame;
             }
