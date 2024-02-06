@@ -139,11 +139,12 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         $relay = $this->getNextFreeRelay();
         $seq = self::$seq;
-        self::$seq++;
         $this->occupiedRelays[$seq] = $relay;
         $this->seqToRelayMap[$seq] = $relay;
 
         $relay->send($this->packFrame($method, $payload));
+
+        self::$seq++;
 
         return $seq;
     }
