@@ -254,6 +254,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             } else {
                 $seqsToDo[] = $seq;
                 $relays[] = $relay;
+                $this->freeRelays[] = $relay;
                 unset($this->occupiedRelays[$seq]);
             }
         }
@@ -278,10 +279,18 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 $relay = array_splice($relays, $relayIndex, 1)[0];
                 /** @var positive-int $seq */
                 $seq = array_splice($seqsToDo, $relayIndex, 1)[0];
-
-                // Add before waitFrame() to make sure we keep track of the $relay
-                $this->freeRelays[] = $relay;
                 $frame = $relay->waitFrame();
+
+                if (count($frame->options) !== 2) {
+                    throw new RPCException('Invalid RPC frame, options missing');
+                }
+
+                if ($frame->options[0] !== $seq) {
+                    // Save response since $seq was invalid but the response may not
+                    $this->asyncResponseBuffer[$frame->options[0]] = $frame;
+
+                    throw new RPCException('Invalid RPC frame, sequence mismatch');
+                }
 
                 yield $seq => $this->decodeResponse($frame, $relay, $options);
             }
