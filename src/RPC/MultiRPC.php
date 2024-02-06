@@ -125,8 +125,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function callIgnoreResponse(string $method, mixed $payload): void
     {
         $relay = $this->getNextFreeRelay();
-        $relay->send($this->packFrame($method, $payload));
         $this->occupiedRelaysIgnoreResponse[] = $relay;
+        $relay->send($this->packFrame($method, $payload));
         self::$seq++;
     }
 
@@ -138,11 +138,13 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         }
 
         $relay = $this->getNextFreeRelay();
-        $relay->send($this->packFrame($method, $payload));
         $seq = self::$seq;
         self::$seq++;
         $this->occupiedRelays[$seq] = $relay;
         $this->seqToRelayMap[$seq] = $relay;
+
+        $relay->send($this->packFrame($method, $payload));
+
         return $seq;
     }
 
