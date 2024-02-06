@@ -133,17 +133,20 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function callAsync(string $method, mixed $payload): int
     {
         // Flush buffer if someone doesn't call getResponse
-        if (count($this->asyncResponseBuffer) > 1000) {
+        if (count($this->asyncResponseBuffer) > 1_000_000) {
+            foreach ($this->asyncResponseBuffer as $seq => $_) {
+                unset($this->seqToRelayMap[$seq]);
+            }
             $this->asyncResponseBuffer = [];
         }
 
         $relay = $this->getNextFreeRelay();
-        $seq = self::$seq;
-        $this->occupiedRelays[$seq] = $relay;
-        $this->seqToRelayMap[$seq] = $relay;
+        $this->occupiedRelays[self::$seq] = $relay;
+        $this->seqToRelayMap[self::$seq] = $relay;
 
         $relay->send($this->packFrame($method, $payload));
 
+        $seq = self::$seq;
         self::$seq++;
 
         return $seq;
@@ -219,6 +222,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         }
 
         if ($frame->options[0] !== $seq) {
+            // Save response since $seq was invalid but the response may not
+            $this->asyncResponseBuffer[$frame->options[0]] = $frame;
+
             throw new RPCException('Invalid RPC frame, sequence mismatch');
         }
 
