@@ -295,7 +295,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 $indexKeyed = array_flip($index);
                 foreach ($this->occupiedRelaysIgnoreResponse as $relayIndex => $relay) {
                     if (isset($indexKeyed[$relayIndex])) {
-                        $this->tryFlushRelay($relay, true);
+                        $this->tryFlushRelay($relay);
                         $this->freeRelays[] = $relay;
                     } else {
                         $occupiedRelaysIgnoreResponse[] = $relay;
@@ -307,7 +307,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             } elseif ($index !== false) {
                 /** @var RelayInterface $relay */
                 $relay = array_splice($this->occupiedRelaysIgnoreResponse, $index, 1)[0];
-                $this->tryFlushRelay($relay, true);
+                $this->tryFlushRelay($relay);
                 return $relay;
             }
         }
@@ -327,7 +327,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                     // Wait for an ignore-response relay to become free (the oldest since it makes the most sense)
                     /** @var RelayInterface $relay */
                     $relay = array_shift($this->occupiedRelaysIgnoreResponse);
-                    $this->tryFlushRelay($relay, true);
+                    $this->tryFlushRelay($relay);
                     return $relay;
                 } else {
                     // Use the oldest occupied relay for this instead
