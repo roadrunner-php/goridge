@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Spiral\Goridge\Tests;
 
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use ReflectionProperty;
+use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
@@ -442,7 +444,7 @@ abstract class MultiRPC extends TestCase
         $this->assertSame('pong', $this->rpc->getResponse($id));
         $this->assertFreeRelaysCorrectNumber($this->rpc);
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage('Invalid Seq, unknown');
+        $this->expectExceptionMessage('Invalid seq, unknown');
         $this->assertSame('pong', $this->rpc->getResponse($id));
     }
 
@@ -496,6 +498,152 @@ abstract class MultiRPC extends TestCase
             $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
         }
 
+        foreach ($this->rpc->getResponses($ids) as $response) {
+            $this->assertSame('pong', $response);
+        }
+    }
+
+    public function testHandleRelayDisconnect(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $occupiedRelays = $property->getValue($this->rpc);
+        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        $occupiedRelays[$id]->close();
+        $this->expectException(TransportException::class);
+        $this->rpc->getResponse($id);
+    }
+
+    public function testHandleRelayDisconnectWithPressure(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $occupiedRelays = $property->getValue($this->rpc);
+        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        $occupiedRelays[$id]->close();
+
+        $ids = [];
+        for ($i = 0; $i < 50; $i++) {
+            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        }
+
+        foreach ($this->rpc->getResponses($ids) as $response) {
+            $this->assertSame('pong', $response);
+        }
+
+        // In this case there may be two different scenarios, which is why there are three tests basically doing the same
+        // In the first one, the disconnected relay was already discovered. In that case, an RPCException is thrown (unknown seq).
+        // In the second one, the disconnected relay is only now discovered, which throws a TransportException instead.
+        // We need to kind of force the issue in the second two tests. This one does whatever the MultiRPC has done.
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
+        $discovered = !isset($property->getValue($this->rpc)[$id]);
+
+        if ($discovered) {
+            $this->expectException(RPCException::class);
+            $this->expectExceptionMessage('Invalid seq, unknown');
+        } else {
+            $this->expectException(TransportException::class);
+            $this->expectExceptionMessage('Unable to read payload from the stream');
+        }
+        $this->rpc->getResponse($id);
+    }
+
+    public function testHandleRelayDisconnectWithPressureForceDiscovered(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $occupiedRelays = $property->getValue($this->rpc);
+        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        $occupiedRelays[$id]->close();
+
+        $ids = [];
+        for ($i = 0; $i < 50; $i++) {
+            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        }
+
+        foreach ($this->rpc->getResponses($ids) as $response) {
+            $this->assertSame('pong', $response);
+        }
+
+        // In this case there may be two different scenarios, which is why there are three tests basically doing the same
+        // In the first one, the disconnected relay was already discovered. In that case, an RPCException is thrown (unknown seq).
+        // In the second one, the disconnected relay is only now discovered, which throws a TransportException instead.
+        // We need to kind of force the issue in the second two tests. This one does whatever the MultiRPC has done.
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
+        $discovered = !isset($property->getValue($this->rpc)[$id]);
+
+        if (!$discovered) {
+            $method = new ReflectionMethod(GoridgeMultiRPC::class, 'checkAllOccupiedRelaysStillConnected');
+            $method->invoke($this->rpc);
+        }
+
+        $this->expectException(RPCException::class);
+        $this->expectExceptionMessage('Invalid seq, unknown');
+        $this->rpc->getResponse($id);
+    }
+
+    public function testHandleRelayDisconnectWithPressureForceUndiscovered(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $occupiedProperty = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $occupiedRelays = $occupiedProperty->getValue($this->rpc);
+        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        $occupiedRelays[$id]->close();
+
+        $ids = [];
+        for ($i = 0; $i < 50; $i++) {
+            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        }
+
+        foreach ($this->rpc->getResponses($ids) as $response) {
+            $this->assertSame('pong', $response);
+        }
+
+        // In this case there may be two different scenarios, which is why there are three tests basically doing the same
+        // In the first one, the disconnected relay was already discovered. In that case, an RPCException is thrown (unknown seq).
+        // In the second one, the disconnected relay is only now discovered, which throws a TransportException instead.
+        // We need to kind of force the issue in the second two tests. This one does whatever the MultiRPC has done.
+        $mapProperty = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
+        $seqToRelayMap = $mapProperty->getValue($this->rpc);
+        $discovered = !isset($seqToRelayMap[$id]);
+
+        if ($discovered) {
+            $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+            $freeRelays = $property->getValue($this->rpc);
+            $relay = array_pop($freeRelays);
+            $property->setValue($this->rpc, $freeRelays);
+            assert($relay instanceof SocketRelay);
+            $relay->close();
+            $seqToRelayMap[$id] = $relay;
+            $occupiedRelays[$id] = $relay;
+            $mapProperty->setValue($this->rpc, $seqToRelayMap);
+            $occupiedProperty->setValue($this->rpc, $occupiedRelays);
+
+
+            $this->expectException(RPCException::class);
+            $this->expectExceptionMessage('Invalid seq, unknown');
+        }
+
+        $this->expectException(TransportException::class);
+        $this->expectExceptionMessage('Unable to read payload from the stream');
+        $this->rpc->getResponse($id);
+    }
+
+    public function testHandleRelayDisconnectWithPressureGetResponses(): void
+    {
+        $ids = [];
+        $ids[] = $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $occupiedRelays = $property->getValue($this->rpc);
+        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        $occupiedRelays[$id]->close();
+
+        for ($i = 0; $i < 50; $i++) {
+            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        }
+
+        $this->expectException(RPCException::class);
+        $this->expectExceptionMessage('Invalid seq, unknown');
         foreach ($this->rpc->getResponses($ids) as $response) {
             $this->assertSame('pong', $response);
         }

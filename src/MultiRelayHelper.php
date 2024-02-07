@@ -29,16 +29,18 @@ class MultiRelayHelper
             foreach ($relays as $relayIndex => $relay) {
                 assert($relay instanceof SocketRelay);
 
-                // A quick-return for a SocketRelay that is not connected yet.
-                // A non-connected relay implies that it is free. We can eat the connection-cost if it means
-                // we'll have more Relays available.
-                // Not doing this would also potentially result in never using the relay in the first place.
+                // Enforce connection
                 if ($relay->socket === null) {
-                    return [$relayIndex];
+                    // Important: Do not force reconnect here as it would otherwise completely ruin further handling
+                    continue;
                 }
 
                 $sockets[] = $relay->socket;
                 $socketIdToRelayIndexMap[spl_object_id($relay->socket)] = $relayIndex;
+            }
+
+            if (count($sockets) === 0) {
+                return false;
             }
 
             $writes = null;
@@ -62,6 +64,7 @@ class MultiRelayHelper
             $streamNameToRelayIndexMap = [];
             foreach ($relays as $relayIndex => $relay) {
                 assert($relay instanceof StreamRelay);
+
                 $streams[] = $relay->in;
                 $streamNameToRelayIndexMap[(string)$relay->in] = $relayIndex;
             }
@@ -83,5 +86,31 @@ class MultiRelayHelper
         }
 
         return false;
+    }
+
+    /**
+     * @param array<array-key, RelayInterface> $relays
+     * @return array-key[]|false
+     * @internal
+     * Returns either
+     *  - an array of array keys, even if only one
+     *  - or false if none
+     */
+    public static function checkConnected(array $relays): array|false
+    {
+        if (count($relays) === 0 || !$relays[array_key_first($relays)] instanceof SocketRelay) {
+            return false;
+        }
+
+        $keysNotConnected = [];
+        foreach ($relays as $key => $relay) {
+            assert($relay instanceof SocketRelay);
+            if ($relay->socket === null) {
+                $relay->connect();
+                $keysNotConnected[] = $key;
+            }
+        }
+
+        return $keysNotConnected;
     }
 }
