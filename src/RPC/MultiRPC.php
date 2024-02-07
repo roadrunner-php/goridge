@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Spiral\Goridge\RPC;
 
 use Spiral\Goridge\Exception\RelayException;
+use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\MultiRelayHelper;
 use Spiral\Goridge\Relay;
@@ -187,7 +188,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
     public function getResponse(int $seq, mixed $options = null): mixed
     {
-        $relay = $this->seqToRelayMap[$seq] ?? throw new RPCException('Invalid Seq, unknown');
+        $relay = $this->seqToRelayMap[$seq] ?? throw new RPCException('Invalid seq, unknown');
         unset($this->seqToRelayMap[$seq]);
 
         if (($frame = $this->getResponseFromBuffer($seq)) !== null) {
@@ -200,6 +201,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             $this->freeRelays[] = $this->occupiedRelays[$seq];
             unset($this->occupiedRelays[$seq]);
 
+            if ($relay instanceof SocketRelay && !$relay->isConnected()) {
+                throw new TransportException("Unable to read payload from the stream");
+            }
+
             $frame = $this->getResponseFromRelay($relay, $seq, true);
         }
 
@@ -209,22 +214,30 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function getResponses(array $seqs, mixed $options = null): iterable
     {
         $seqsKeyed = array_flip($seqs);
-        // Fetch all relays for $seqs
-        /** @var array<positive-int, RelayInterface> $seqsToRelays */
-        $seqsToRelays = array_intersect_key($this->seqToRelayMap, $seqsKeyed);
-
-        if (count($seqsToRelays) !== count($seqs)) {
-            throw new RPCException("Invalid seq, unknown");
-        }
 
         // Fetch all responses already buffered
         /** @var array<positive-int, Frame> $responsesBuffered */
         $responsesBuffered = array_intersect_key($this->asyncResponseBuffer, $seqsKeyed);
 
+        // Fetch all relays for buffered responses
+        /** @var array<positive-int, RelayInterface> $seqsToRelays */
+        $seqsToRelays = array_intersect_key($this->seqToRelayMap, $responsesBuffered);
+
+        if (count($seqsToRelays) !== count($responsesBuffered)) {
+            throw new RPCException("Invalid seq, unknown");
+        }
+
         foreach ($responsesBuffered as $seq => $frame) {
             $relay = $seqsToRelays[$seq];
             yield $seq => $this->decodeResponse($frame, $relay, $options);
             unset($this->asyncResponseBuffer[$seq], $seqsKeyed[$seq], $seqsToRelays[$seq]);
+        }
+
+        // Fetch all relays that are still occupied
+        $seqsToRelays = array_intersect_key($this->occupiedRelays, $seqsKeyed);
+
+        if (count($seqsToRelays) !== count($seqsKeyed)) {
+            throw new RPCException("Invalid seq, unknown");
         }
 
         $timeoutInMicroseconds = 0;
@@ -235,8 +248,12 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             $timeoutInMicroseconds = 500;
 
             if ($seqsReceivedResponse === false) {
-                // Just wait for the oldest???
-                $seqsReceivedResponse = [array_key_first($seqsToRelays)];
+                if ($this->checkAllOccupiedRelaysStillConnected()) {
+                    if (count(array_diff_key($seqsToRelays, $this->occupiedRelays))) {
+                        throw new RPCException("Invalid seq, unknown");
+                    }
+                }
+                continue;
             }
 
             foreach ($seqsReceivedResponse as $seq) {
@@ -272,8 +289,11 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             $index = MultiRelayHelper::findRelayWithMessage($this->occupiedRelays);
 
             if ($index === false) {
-                // Just take the oldest, whatever
-                $index = [array_key_first($this->occupiedRelays)];
+                if ($this->checkAllOccupiedRelaysStillConnected()) {
+                    continue;
+                } else {
+                    $index = [array_key_first($this->occupiedRelays)];
+                }
             }
 
             // Flush as many relays as we can up until a limit (arbitrarily 10?)
@@ -292,6 +312,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 }
             }
         }
+
+        // Sometimes check if all occupied relays are even still connected
+        $this->checkAllOccupiedRelaysStillConnected();
 
         return array_key_last($this->freeRelays);
     }
@@ -341,5 +364,20 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         }
 
         return $frame;
+    }
+
+    private function checkAllOccupiedRelaysStillConnected(): bool
+    {
+        if (($relaysNotConnected = MultiRelayHelper::checkConnected($this->occupiedRelays)) !== false) {
+            /** @var positive-int $seq */
+            foreach ($relaysNotConnected as $seq) {
+                $this->freeRelays[] = $this->occupiedRelays[$seq];
+                unset($this->seqToRelayMap[$seq], $this->occupiedRelays[$seq]);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }
