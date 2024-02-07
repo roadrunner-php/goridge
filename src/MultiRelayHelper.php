@@ -10,15 +10,14 @@ use function socket_select;
 class MultiRelayHelper
 {
     /**
-     * @param array<int, RelayInterface> $relays
-     * @return int|int[]|false
+     * @param array<array-key, RelayInterface> $relays
+     * @return array-key[]|false
      * @internal
      * Returns either
-     *  - a single index if only one relay has changed state
-     *  - an array of indices if multiple
+     *  - an array of array keys, even if only one
      *  - or false if none
      */
-    public static function findRelayWithMessage(array $relays, int $timeoutInMicroseconds = 0): array|bool|int
+    public static function findRelayWithMessage(array $relays, int $timeoutInMicroseconds = 0): array|false
     {
         if (count($relays) === 0) {
             return false;
@@ -26,7 +25,8 @@ class MultiRelayHelper
 
         if ($relays[0] instanceof SocketRelay) {
             $sockets = [];
-            foreach ($relays as $index => $relay) {
+            $socketIdToRelayIndexMap = [];
+            foreach ($relays as $relayIndex => $relay) {
                 assert($relay instanceof SocketRelay);
 
                 // A quick-return for a SocketRelay that is not connected yet.
@@ -34,23 +34,22 @@ class MultiRelayHelper
                 // we'll have more Relays available.
                 // Not doing this would also potentially result in never using the relay in the first place.
                 if ($relay->socket === null) {
-                    return $index;
+                    return [$relayIndex];
                 }
 
                 $sockets[] = $relay->socket;
+                $socketIdToRelayIndexMap[spl_object_id($relay->socket)] = $relayIndex;
             }
 
-            // Map of "id" => index
-            $socketIds = array_flip(array_map(fn(Socket $socket) => spl_object_id($socket), $sockets));
             $writes = null;
             $except = null;
             $changes = socket_select($sockets, $writes, $except, 0, $timeoutInMicroseconds);
 
             if ($changes > 1) {
-                return array_map(fn(Socket $socket) => $socketIds[spl_object_id($socket)], $sockets);
+                return array_map(fn(Socket $socket) => $socketIdToRelayIndexMap[spl_object_id($socket)], $sockets);
             } elseif ($changes === 1) {
                 $id = spl_object_id($sockets[0]);
-                return $socketIds[$id];
+                return [$socketIdToRelayIndexMap[$id]];
             } else {
                 return false;
             }
@@ -58,22 +57,22 @@ class MultiRelayHelper
 
         if ($relays[0] instanceof StreamRelay) {
             $streams = [];
-            foreach ($relays as $relay) {
+            $streamNameToRelayIndexMap = [];
+            foreach ($relays as $relayIndex => $relay) {
                 assert($relay instanceof StreamRelay);
                 $streams[] = $relay->in;
+                $streamNameToRelayIndexMap[(string)$relay->in] = $relayIndex;
             }
 
-            // Map of "id" => index
-            $streamIds = array_flip(array_map(fn($resource) => (string)$resource, $streams));
             $writes = null;
             $except = null;
             $changes = stream_select($streams, $writes, $except, 0, $timeoutInMicroseconds);
 
             if ($changes > 1) {
-                return array_map(fn($resource) => $streamIds[(string)$resource], $streams);
+                return array_map(fn($resource) => $streamNameToRelayIndexMap[(string)$resource], $streams);
             } elseif ($changes === 1) {
                 $id = (string)$streams[0];
-                return $streamIds[$id];
+                return [$streamNameToRelayIndexMap[$id]];
             } else {
                 return false;
             }
