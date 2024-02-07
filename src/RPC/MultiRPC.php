@@ -273,6 +273,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     private function ensureFreeRelayAvailable(): int
     {
         if (count($this->freeRelays) > 0) {
+            /** @psalm-return int */
             return array_key_last($this->freeRelays);
         }
 
@@ -300,6 +301,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 }
             }
 
+            assert(count($this->freeRelays) > 0);
             return array_key_last($this->freeRelays);
         }
 
