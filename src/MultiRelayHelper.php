@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge;
 
-use Socket;
+use Spiral\Goridge\RPC\Exception\RPCException;
 use function socket_select;
 
 class MultiRelayHelper
@@ -23,7 +23,7 @@ class MultiRelayHelper
             return false;
         }
 
-        if ($relays[0] instanceof SocketRelay) {
+        if ($relays[array_key_first($relays)] instanceof SocketRelay) {
             $sockets = [];
             $socketIdToRelayIndexMap = [];
             foreach ($relays as $relayIndex => $relay) {
@@ -45,17 +45,19 @@ class MultiRelayHelper
             $except = null;
             $changes = socket_select($sockets, $writes, $except, 0, $timeoutInMicroseconds);
 
-            if ($changes > 1) {
-                return array_map(fn(Socket $socket) => $socketIdToRelayIndexMap[spl_object_id($socket)], $sockets);
-            } elseif ($changes === 1) {
-                $id = spl_object_id($sockets[0]);
-                return [$socketIdToRelayIndexMap[$id]];
+            if ($changes > 0) {
+                $indexes = [];
+                foreach ($sockets as $socket) {
+                    $indexes[] = $socketIdToRelayIndexMap[spl_object_id($socket)] ?? throw new RPCException("Invalid socket??");
+                }
+
+                return $indexes;
             } else {
                 return false;
             }
         }
 
-        if ($relays[0] instanceof StreamRelay) {
+        if ($relays[array_key_first($relays)] instanceof StreamRelay) {
             $streams = [];
             $streamNameToRelayIndexMap = [];
             foreach ($relays as $relayIndex => $relay) {
@@ -68,11 +70,13 @@ class MultiRelayHelper
             $except = null;
             $changes = stream_select($streams, $writes, $except, 0, $timeoutInMicroseconds);
 
-            if ($changes > 1) {
-                return array_map(fn($resource) => $streamNameToRelayIndexMap[(string)$resource], $streams);
-            } elseif ($changes === 1) {
-                $id = (string)$streams[0];
-                return [$streamNameToRelayIndexMap[$id]];
+            if ($changes > 0) {
+                $indexes = [];
+                foreach ($streams as $stream) {
+                    $indexes[] = $streamNameToRelayIndexMap[(string)$stream] ?? throw new RPCException("Invalid stream??");
+                }
+
+                return $indexes;
             } else {
                 return false;
             }

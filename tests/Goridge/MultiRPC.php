@@ -459,46 +459,47 @@ abstract class MultiRPC extends TestCase
         }
     }
 
-//    public function testCanCallMoreTimesThanBufferAndNotGetResponses(): void
-//    {
-//        $ids = [];
-//
-//        for ($i = 0; $i < 1_000_050; $i++) {
-//            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
-//        }
-//
-//        foreach ($ids as $id) {
-//            try {
-//                $this->assertSame('pong', $this->rpc->getResponse($id));
-//                $this->assertGreaterThanOrEqual(1_000_000, $id);
-//            } catch (RPCException $exception) {
-//                $this->assertLessThan(1_000_000, $id);
-//            }
-//        }
-//
-//        $this->assertFreeRelaysCorrectNumber($this->rpc);
-//    }
+    public function testCanCallMoreTimesThanBufferAndNotGetResponses(): void
+    {
+        $ids = [];
 
-//    public function testCanCallMoreTimesThanRelaysWithIntermittentResponseHandling(): void
-//    {
-//        $ids = [];
-//
-//        for ($i = 0; $i < 1_000_050; $i++) {
-//            if ($i === 500_000) {
-//                foreach ($this->rpc->getResponses($ids) as $response) {
-//                    $this->assertSame('pong', $response);
-//                }
-//                $ids = [];
-//            }
-//            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
-//        }
-//
-//        foreach ($this->rpc->getResponses($ids) as $response) {
-//            $this->assertSame('pong', $response);
-//        }
-//
-//        $this->assertFreeRelaysCorrectNumber($this->rpc);
-//    }
+        // Flood to force the issue
+        for ($i = 0; $i < 20_000; $i++) {
+            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        }
+
+        $this->expectException(RPCException::class);
+
+        // We cheat here since the order in which responses are discarded depends on when they are received
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'asyncResponseBuffer');
+        $buffer = $property->getValue($this->rpc);
+
+        foreach ($ids as $id) {
+            if (!isset($buffer[$id])) {
+                $this->rpc->getResponse($id);
+                $this->fail("Invalid seq did not throw exception");
+            }
+        }
+    }
+
+    public function testCanCallMoreTimesThanRelaysWithIntermittentResponseHandling(): void
+    {
+        $ids = [];
+
+        for ($i = 0; $i < 150; $i++) {
+            if ($i === 50) {
+                foreach ($this->rpc->getResponses($ids) as $response) {
+                    $this->assertSame('pong', $response);
+                }
+                $ids = [];
+            }
+            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        }
+
+        foreach ($this->rpc->getResponses($ids) as $response) {
+            $this->assertSame('pong', $response);
+        }
+    }
 
     protected function setUp(): void
     {
@@ -533,19 +534,17 @@ abstract class MultiRPC extends TestCase
     protected function assertFreeRelaysCorrectNumber(GoridgeMultiRPC $rpc): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
-        $count = count($property->getValue($rpc));
-        $numberOfWaitingResponses = 0;
-        $numberOfOccupiedRelays = 0;
+        $numberOfFreeRelays = count($property->getValue($rpc));
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $numberOfOccupiedRelays = count($property->getValue($rpc));
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
+        $numberOfWaitingResponses = count($property->getValue($rpc));
 
-        // Aid in debugging
-        if ($count !== 10) {
-            $property = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
-            $numberOfWaitingResponses = count($property->getValue($rpc));
-            $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
-            $numberOfOccupiedRelays = count($property->getValue($rpc));
-        }
-
-        $this->assertSame(10, $count, "RPC has lost at least one relay! Waiting Responses: $numberOfWaitingResponses, Occupied Relays: $numberOfOccupiedRelays");
+        $this->assertSame(
+            10,
+            $numberOfFreeRelays + $numberOfOccupiedRelays,
+            "RPC has lost at least one relay! Waiting Responses: $numberOfWaitingResponses, Free Relays: $numberOfFreeRelays, Occupied Relays: $numberOfOccupiedRelays"
+        );
     }
 
     protected function forceFlushRpc(GoridgeMultiRPC $rpc): void

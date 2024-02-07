@@ -120,12 +120,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function callAsync(string $method, mixed $payload): int
     {
         // Flush buffer if someone doesn't call getResponse
-        if (count($this->asyncResponseBuffer) > 1_000_000) {
-            foreach ($this->asyncResponseBuffer as $seq => $_) {
-                unset($this->seqToRelayMap[$seq]);
-                // We don't need to clean up occupiedRelays here since the buffer is solely for responses already
-                // fetched from relays, and those relays are put back to freeRelays in getNextFreeRelay()
-            }
+        if (count($this->asyncResponseBuffer) > 10_000) {
+            // We don't need to clean up occupiedRelays here since the buffer is solely for responses already
+            // fetched from relays, and those relays are put back to freeRelays in getNextFreeRelay()
+            $this->seqToRelayMap = array_diff_key($this->seqToRelayMap, $this->asyncResponseBuffer);
             $this->asyncResponseBuffer = [];
         }
 
@@ -210,59 +208,47 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
     public function getResponses(array $seqs, mixed $options = null): iterable
     {
-        $seqsToDo = [];
-        $relays = [];
+        $seqsKeyed = array_flip($seqs);
+        // Fetch all relays for $seqs
+        /** @var array<positive-int, RelayInterface> $seqsToRelays */
+        $seqsToRelays = array_intersect_key($this->seqToRelayMap, $seqsKeyed);
 
-        // Check for seqs that are already in the buffer
-        foreach ($seqs as $seq) {
-            /** @var positive-int $seq */
+        if (count($seqsToRelays) !== count($seqs)) {
+            throw new RPCException("Invalid seq, unknown");
+        }
 
-            $relay = $this->seqToRelayMap[$seq] ?? throw new RPCException('Invalid Seq, unknown');
-            unset($this->seqToRelayMap[$seq]);
+        // Fetch all responses already buffered
+        /** @var array<positive-int, Frame> $responsesBuffered */
+        $responsesBuffered = array_intersect_key($this->asyncResponseBuffer, $seqsKeyed);
 
-            if (($frame = $this->getResponseFromBuffer($seq)) !== null) {
-                /**
-                 * We can assume through @see MultiRPC::ensureFreeRelayAvailable() that a relay whose response is already
-                 * in this buffer has also been added to freeRelays (or is otherwise occupied).
-                 * Thus we only re-add (and do so without searching for it first) if we don't have the response yet.
-                 */
-
-                yield $seq => $this->decodeResponse($frame, $relay, $options);
-            } else {
-                $seqsToDo[] = $seq;
-                $relays[] = $relay;
-                $this->freeRelays[] = $relay;
-                unset($this->occupiedRelays[$seq]);
-            }
+        foreach ($responsesBuffered as $seq => $frame) {
+            $relay = $seqsToRelays[$seq];
+            yield $seq => $this->decodeResponse($frame, $relay, $options);
+            unset($this->asyncResponseBuffer[$seq], $seqsKeyed[$seq], $seqsToRelays[$seq]);
         }
 
         $timeoutInMicroseconds = 0;
-        while (count($seqsToDo) > 0) {
+        while (count($seqsToRelays) > 0) {
             // Do a first pass without a timeout. Maybe there's already most responses which would make a timeout unnecessary.
-            $index = MultiRelayHelper::findRelayWithMessage($relays, $timeoutInMicroseconds);
-            $timeoutInMicroseconds = 100;
+            /** @var positive-int[]|false $seqsReceivedResponse */
+            $seqsReceivedResponse = MultiRelayHelper::findRelayWithMessage($seqsToRelays, $timeoutInMicroseconds);
+            $timeoutInMicroseconds = 500;
 
-            if ($index === false) {
-                continue;
+            if ($seqsReceivedResponse === false) {
+                // Just wait for the oldest???
+                $seqsReceivedResponse = [array_key_first($seqsToRelays)];
             }
 
-            $indexKeyed = array_flip($index);
-            $relaysLeftOver = [];
-            $seqsLeftOver = [];
-            foreach ($relays as $relayIndex => $relay) {
-                if (isset($indexKeyed[$relayIndex])) {
-                    $seq = $seqsToDo[$relayIndex];
-                    $frame = $this->getResponseFromRelay($relay, $seq, true);
+            foreach ($seqsReceivedResponse as $seq) {
+                $relay = $seqsToRelays[$seq];
+                $this->freeRelays[] = $relay;
+                unset($this->occupiedRelays[$seq]);
 
-                    yield $seq => $this->decodeResponse($frame, $relay, $options);
-                } else {
-                    $relaysLeftOver[] = $relay;
-                    $seqsLeftOver[] = $seqsToDo[$relayIndex];
-                }
+                $frame = $this->getResponseFromRelay($relay, $seq, true);
+                yield $seq => $this->decodeResponse($frame, $relay, $options);
+
+                unset($seqsToRelays[$seq], $this->seqToRelayMap[$seq]);
             }
-
-            $relays = $relaysLeftOver;
-            $seqsToDo = $seqsLeftOver;
         }
     }
 
@@ -277,20 +263,25 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             return array_key_last($this->freeRelays);
         }
 
-        if (count($this->occupiedRelays) > 0) {
+        if (count($this->occupiedRelays) === 0) {
+            throw new RPCException("No relays available at all");
+        }
+
+        while (count($this->freeRelays) === 0) {
+            /** @var positive-int[]|false $index */
             $index = MultiRelayHelper::findRelayWithMessage($this->occupiedRelays);
 
             if ($index === false) {
                 // Just take the oldest, whatever
-                $index = [0];
+                $index = [array_key_first($this->occupiedRelays)];
             }
 
             // Flush as many relays as we can up until a limit (arbitrarily 10?)
-            /** @var positive-int[] $seqs */
-            $seqs = array_keys($this->occupiedRelays);
             for ($i = 0, $max = min(10, count($index)); $i < $max; $i++) {
-                $seq = $seqs[$index[$i]];
-                $this->freeRelays[] = $relay = $this->occupiedRelays[$seq];
+                /** @var positive-int $seq */
+                $seq = $index[$i];
+                $relay = $this->occupiedRelays[$seq];
+                $this->freeRelays[] = $relay;
                 unset($this->occupiedRelays[$seq]);
                 // Save response if in seqToRelayMap (aka a response is expected)
                 // only save response in case of mismatched seq = response not in seqToRelayMap
@@ -300,12 +291,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                     // Intentionally left blank
                 }
             }
-
-            assert(count($this->freeRelays) > 0);
-            return array_key_last($this->freeRelays);
         }
 
-        throw new RPCException("No relays available at all");
+        return array_key_last($this->freeRelays);
     }
 
     /**
