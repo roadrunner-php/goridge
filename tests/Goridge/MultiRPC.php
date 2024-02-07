@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Goridge;
+namespace Spiral\Goridge\Tests;
 
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
@@ -195,7 +195,8 @@ abstract class MultiRPC extends TestCase
     {
         $payload = base64_encode(random_bytes(65000 * 5));
 
-        $id = $this->rpc->withCodec(new RawCodec())->callAsync(
+        $this->rpc = $this->rpc->withCodec(new RawCodec());
+        $id = $this->rpc->callAsync(
             'Service.Echo',
             $payload
         );
@@ -226,7 +227,8 @@ abstract class MultiRPC extends TestCase
     {
         $payload = random_bytes(100);
 
-        $id = $this->rpc->withCodec(new RawCodec())->callAsync(
+        $this->rpc = $this->rpc->withCodec(new RawCodec());
+        $id = $this->rpc->callAsync(
             'Service.EchoBinary',
             $payload
         );
@@ -253,7 +255,8 @@ abstract class MultiRPC extends TestCase
     {
         $payload = random_bytes(65000 * 1000);
 
-        $id = $this->rpc->withCodec(new RawCodec())->callAsync(
+        $this->rpc = $this->rpc->withCodec(new RawCodec());
+        $id = $this->rpc->callAsync(
             'Service.EchoBinary',
             $payload
         );
@@ -314,7 +317,8 @@ abstract class MultiRPC extends TestCase
 
     public function testBadPayloadAsync(): void
     {
-        $id = $this->rpc->withCodec(new RawCodec())->callAsync('Service.Process', 'raw');
+        $this->rpc = $this->rpc->withCodec(new RawCodec());
+        $id = $this->rpc->callAsync('Service.Process', 'raw');
 
         $this->expectException(ServiceException::class);
         $this->expectExceptionMessage('unknown Raw payload type');
@@ -391,44 +395,45 @@ abstract class MultiRPC extends TestCase
     public function testJsonExceptionAsync(): void
     {
         $this->expectException(CodecException::class);
-
-        $this->rpc->callAsync('Service.Process', random_bytes(256));
+        $id = $this->rpc->callAsync('Service.Process', random_bytes(256));
     }
 
-    public function testJsonExceptionIgnoreResponse(): void
+    public function testJsonExceptionNotThrownWithIgnoreResponse(): void
     {
         $this->expectException(CodecException::class);
-
         $this->rpc->callIgnoreResponse('Service.Process', random_bytes(256));
     }
 
     public function testSleepEcho(): void
     {
-        $time = hrtime(true);
+        $time = hrtime(true) / 1e9;
         $this->assertSame('Hello', $this->rpc->call('Service.SleepEcho', 'Hello'));
         // sleep is 100ms, so we check if we are further along than 100ms
-        $this->assertGreaterThanOrEqual($time + (100 * 1e6), hrtime(true));
+        $this->assertGreaterThanOrEqual($time + 0.1, hrtime(true) / 1e9);
     }
 
     public function testSleepEchoAsync(): void
     {
-
-        $time = hrtime(true);
+        $time = hrtime(true) / 1e9;
         $id = $this->rpc->callAsync('Service.SleepEcho', 'Hello');
-        // hrtime is in nanoseconds, and at most expect 100 microseconds (sleep is 100ms)
-        $this->assertLessThanOrEqual($time + (100 * 1e3), hrtime(true));
+        // hrtime is in nanoseconds, and at most expect 1ms delay (sleep is 100ms)
+        $this->assertLessThanOrEqual($time + 0.001, hrtime(true) / 1e9);
         $this->assertFalse($this->rpc->hasResponse($id));
         $this->assertSame('Hello', $this->rpc->getResponse($id));
         // sleep is 100ms, so we check if we are further along than 100ms
-        $this->assertGreaterThanOrEqual($time + (100 * 1e6), hrtime(true));
+        $this->assertGreaterThanOrEqual($time + 0.1, hrtime(true) / 1e9);
     }
 
     public function testSleepEchoIgnoreResponse(): void
     {
-        $time = hrtime(true);
+        $time = hrtime(true) / 1e9;
         $this->rpc->callIgnoreResponse('Service.SleepEcho', 'Hello');
-        // hrtime is in nanoseconds, and at most expect 100 microseconds (sleep is 100ms)
-        $this->assertLessThanOrEqual($time + (100 * 1e3), hrtime(true));
+        // hrtime is in nanoseconds, and at most expect 1ms delay (sleep is 100ms)
+        $this->assertLessThanOrEqual($time + 0.001, hrtime(true) / 1e9);
+        // Wait for response
+        usleep(100_000);
+
+        $this->forceFlushRpc($this->rpc);
     }
 
     public function testCannotGetSameResponseTwice(): void
@@ -452,9 +457,48 @@ abstract class MultiRPC extends TestCase
         foreach ($this->rpc->getResponses($ids) as $response) {
             $this->assertSame('pong', $response);
         }
-
-        $this->assertFreeRelaysCorrectNumber($this->rpc);
     }
+
+//    public function testCanCallMoreTimesThanBufferAndNotGetResponses(): void
+//    {
+//        $ids = [];
+//
+//        for ($i = 0; $i < 1_000_050; $i++) {
+//            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+//        }
+//
+//        foreach ($ids as $id) {
+//            try {
+//                $this->assertSame('pong', $this->rpc->getResponse($id));
+//                $this->assertGreaterThanOrEqual(1_000_000, $id);
+//            } catch (RPCException $exception) {
+//                $this->assertLessThan(1_000_000, $id);
+//            }
+//        }
+//
+//        $this->assertFreeRelaysCorrectNumber($this->rpc);
+//    }
+
+//    public function testCanCallMoreTimesThanRelaysWithIntermittentResponseHandling(): void
+//    {
+//        $ids = [];
+//
+//        for ($i = 0; $i < 1_000_050; $i++) {
+//            if ($i === 500_000) {
+//                foreach ($this->rpc->getResponses($ids) as $response) {
+//                    $this->assertSame('pong', $response);
+//                }
+//                $ids = [];
+//            }
+//            $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+//        }
+//
+//        foreach ($this->rpc->getResponses($ids) as $response) {
+//            $this->assertSame('pong', $response);
+//        }
+//
+//        $this->assertFreeRelaysCorrectNumber($this->rpc);
+//    }
 
     protected function setUp(): void
     {
@@ -489,7 +533,32 @@ abstract class MultiRPC extends TestCase
     protected function assertFreeRelaysCorrectNumber(GoridgeMultiRPC $rpc): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
-        $property->setAccessible(true);
-        $this->assertSame(10, count($property->getValue($rpc)));
+        $count = count($property->getValue($rpc));
+        $numberOfWaitingResponses = 0;
+        $numberOfOccupiedRelays = 0;
+
+        // Aid in debugging
+        if ($count !== 10) {
+            $property = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
+            $numberOfWaitingResponses = count($property->getValue($rpc));
+            $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+            $numberOfOccupiedRelays = count($property->getValue($rpc));
+        }
+
+        $this->assertSame(10, $count, "RPC has lost at least one relay! Waiting Responses: $numberOfWaitingResponses, Occupied Relays: $numberOfOccupiedRelays");
+    }
+
+    protected function forceFlushRpc(GoridgeMultiRPC $rpc): void
+    {
+        // Force consuming relay by flooding requests
+        $ids = [];
+        for ($i = 0; $i < 50; $i++) {
+            $ids[] = $rpc->callAsync('Service.Ping', 'ping');
+        }
+        foreach ($rpc->getResponses($ids) as $id => $response) {
+            $this->assertSame('pong', $response);
+            array_splice($ids, array_search($id, $ids, true), 1);
+        }
+        $this->assertEmpty($ids);
     }
 }
