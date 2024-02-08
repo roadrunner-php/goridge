@@ -17,6 +17,7 @@ use Spiral\Goridge\RPC\Exception\ServiceException;
 use Spiral\Goridge\RPC\MultiRPC as GoridgeMultiRPC;
 use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\SocketType;
+use Spiral\Goridge\StreamRelay;
 
 abstract class MultiRPC extends TestCase
 {
@@ -657,9 +658,36 @@ abstract class MultiRPC extends TestCase
      */
     public function testHandleCloneCorrectly(): void
     {
+        $this->rpc->preConnectRelays();
         $clonedRpc = $this->rpc->withCodec(new MsgpackCodec());
-        $clonedRpc->callIgnoreResponse('Service.Ping', 'ping');
+        for ($i = 0; $i < 50; $i++) {
+            $clonedRpc->callIgnoreResponse('Service.Ping', 'ping');
+        }
+        // Wait 100ms for the response(s)
+        usleep(100 * 1000);
+
+        // Close all relays in cloned RPC
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $propertyOccupied = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $allRelays = [...$property->getValue($clonedRpc), ...$propertyOccupied->getValue($clonedRpc)];
+        foreach ($allRelays as $relay) {
+            if ($relay instanceof SocketRelay && $relay->isConnected()) {
+                $relay->close();
+            }
+        }
+
+        foreach ($property->getValue($this->rpc) as $relay) {
+            if ($relay instanceof SocketRelay) {
+                $this->assertTrue($relay->isConnected());
+            }
+        }
         $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
+    }
+
+    public function testAllowsOnlySockets(): void{
+        $this->expectException(RPCException::class);
+        $this->expectExceptionMessage("MultiRPC can only be used with sockets, no pipes allowed");
+        $this->rpc = new GoridgeMultiRPC([new StreamRelay(STDIN, STDOUT)]);
     }
 
     protected function setUp(): void
