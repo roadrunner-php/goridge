@@ -52,6 +52,21 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     }
 
     /**
+     * Without cloning relays explicitly they get shared and thus, when one RPC gets called, the freeRelays array
+     * in the other RPC stays the same, making it reuse the just-used and still occupied relay.
+     */
+    public function __clone()
+    {
+        foreach ($this->freeRelays as $key => $relay) {
+            $this->freeRelays[$key] = clone $relay;
+        }
+        foreach ($this->occupiedRelays as $key => $relay) {
+            $this->occupiedRelays[$key] = clone $relay;
+        }
+        $this->seqToRelayMap = $this->asyncResponseBuffer = [];
+    }
+
+    /**
      * @param non-empty-string $connection
      * @param positive-int $count
      */

@@ -9,6 +9,7 @@ use ReflectionMethod;
 use ReflectionProperty;
 use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\RelayInterface;
+use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
 use Spiral\Goridge\RPC\Exception\RPCException;
@@ -647,6 +648,18 @@ abstract class MultiRPC extends TestCase
         foreach ($this->rpc->getResponses($ids) as $response) {
             $this->assertSame('pong', $response);
         }
+    }
+
+    /**
+     * This test checks whether relays are cloned correctly, or if they get shared between the cloned instances.
+     * Without cloning them explicitly they get shared and thus, when one RPC gets called, the freeRelays array
+     * in the other RPC stays the same, making it reuse the just-used and still occupied relay.
+     */
+    public function testHandleCloneCorrectly(): void
+    {
+        $clonedRpc = $this->rpc->withCodec(new MsgpackCodec());
+        $clonedRpc->callIgnoreResponse('Service.Ping', 'ping');
+        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
     }
 
     protected function setUp(): void
