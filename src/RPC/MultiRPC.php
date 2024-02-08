@@ -47,6 +47,12 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         array $relays,
         CodecInterface $codec = new JsonCodec()
     ) {
+        foreach ($relays as $relay) {
+            if (!($relay instanceof SocketRelay)) {
+                throw new RPCException("MultiRPC can only be used with sockets, no pipes allowed");
+            }
+        }
+
         $this->freeRelays = $relays;
         parent::__construct($codec);
     }

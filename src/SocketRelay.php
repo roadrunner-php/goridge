@@ -110,6 +110,12 @@ class SocketRelay extends Relay implements Stringable
         return "unix://{$this->address}";
     }
 
+    public function __clone()
+    {
+        // Remove reference to socket on clone
+        $this->socket = null;
+    }
+
     public function getAddress(): string
     {
         return $this->address;
