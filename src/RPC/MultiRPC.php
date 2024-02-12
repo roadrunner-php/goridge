@@ -222,10 +222,6 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             $this->freeRelays[] = $this->occupiedRelays[$seq];
             unset($this->occupiedRelays[$seq]);
 
-            if ($relay instanceof SocketRelay && !$relay->isConnected()) {
-                throw new TransportException("Unable to read payload from the stream");
-            }
-
             $frame = $this->getResponseFromRelay($relay, $seq, true);
         }
 
@@ -234,29 +230,27 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
     public function getResponses(array $seqs, mixed $options = null): iterable
     {
-        $seqsKeyed = array_flip($seqs);
-
-        // Fetch all responses already buffered
-        /** @var array<positive-int, Frame> $responsesBuffered */
-        $responsesBuffered = array_intersect_key($this->asyncResponseBuffer, $seqsKeyed);
-
-        // Fetch all relays for buffered responses
-        /** @var array<positive-int, RelayInterface> $seqsToRelays */
-        $seqsToRelays = array_intersect_key($this->seqToRelayMap, $responsesBuffered);
-
-        if (count($seqsToRelays) !== count($responsesBuffered)) {
-            throw new RPCException("Invalid seq, unknown");
+        // Quick return
+        if (count($seqs) === 0) {
+            return;
         }
 
-        foreach ($responsesBuffered as $seq => $frame) {
-            $relay = $seqsToRelays[$seq];
-            yield $seq => $this->decodeResponse($frame, $relay, $options);
-            unset($this->asyncResponseBuffer[$seq], $seqsKeyed[$seq], $seqsToRelays[$seq]);
+        // Flip the array to use the $seqs for key indexing
+        $seqsKeyed = [];
+
+        foreach ($seqs as $seq) {
+            if (isset($this->asyncResponseBuffer[$seq])) {
+                // We can use getResponse() here since it's doing basically what we want to do here anyway
+                yield $seq => $this->getResponse($seq, $options);
+            } else {
+                $seqsKeyed[$seq] = true;
+            }
         }
 
-        // Fetch all relays that are still occupied
+        // Fetch all relays that are still occupied and which we need responses from
         $seqsToRelays = array_intersect_key($this->occupiedRelays, $seqsKeyed);
 
+        // Make sure we have relays for all $seqs, otherwise something went wrong
         if (count($seqsToRelays) !== count($seqsKeyed)) {
             throw new RPCException("Invalid seq, unknown");
         }
@@ -270,7 +264,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
             if ($seqsReceivedResponse === false) {
                 if ($this->checkAllOccupiedRelaysStillConnected()) {
-                    if (count(array_diff_key($seqsToRelays, $this->occupiedRelays))) {
+                    // Check if we've lost a relay we were waiting on, if so we need to quit since something is wrong.
+                    if (count(array_diff_key($seqsToRelays, $this->occupiedRelays)) > 0) {
                         throw new RPCException("Invalid seq, unknown");
                     }
                 }
@@ -278,13 +273,16 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             }
 
             foreach ($seqsReceivedResponse as $seq) {
+                // Add the previously occupied relay to freeRelays here so that we don't lose it in case of an error
                 $relay = $seqsToRelays[$seq];
                 $this->freeRelays[] = $relay;
                 unset($this->occupiedRelays[$seq]);
 
+                // Yield the response
                 $frame = $this->getResponseFromRelay($relay, $seq, true);
                 yield $seq => $this->decodeResponse($frame, $relay, $options);
 
+                // Unset tracking map
                 unset($seqsToRelays[$seq], $this->seqToRelayMap[$seq]);
             }
         }
@@ -359,6 +357,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      */
     private function getResponseFromRelay(RelayInterface $relay, int $expectedSeq, bool $onlySaveResponseInCaseOfMismatchedSeq = false): Frame
     {
+        if ($relay instanceof SocketRelay && !$relay->isConnected()) {
+            throw new TransportException("Unable to read payload from the stream");
+        }
+
         $frame = $relay->waitFrame();
 
         if (count($frame->options) !== 2) {
