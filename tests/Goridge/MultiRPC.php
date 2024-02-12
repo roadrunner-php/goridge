@@ -686,7 +686,7 @@ abstract class MultiRPC extends TestCase
 
     public function testAllowsOnlySockets(): void{
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage("MultiRPC can only be used with sockets, no pipes allowed");
+        $this->expectExceptionMessage("MultiRPC can only be used with SocketRelay");
         $this->rpc = new GoridgeMultiRPC([new StreamRelay(STDIN, STDOUT)]);
     }
 
