@@ -297,11 +297,14 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     private function ensureFreeRelayAvailable(): int
     {
         if (count($this->freeRelays) > 0) {
+            // Return the last entry on $this->freeRelays so that further code can use unset() instead of array_splice (index handling)
             /** @psalm-return int */
             return array_key_last($this->freeRelays);
         }
 
         if (count($this->occupiedRelays) === 0) {
+            // If we have neither freeRelays nor occupiedRelays then someone either initialized this with 0 relays
+            // or something went terribly wrong. Either way we need to quit.
             throw new RPCException("No relays available at all");
         }
 
@@ -310,9 +313,12 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             $index = MultiRelayHelper::findRelayWithMessage($this->occupiedRelays);
 
             if ($index === false) {
+                // Check if all currently occupied relays are even still connected. Do another loop if they aren't.
                 if ($this->checkAllOccupiedRelaysStillConnected()) {
                     continue;
                 } else {
+                    // Just choose the first occupiedRelay to wait on since instead we may busyloop here
+                    // checking relay status and not giving RR the chance to actually answer (in a single core env for example).
                     $index = [array_key_first($this->occupiedRelays)];
                 }
             }
@@ -321,6 +327,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             for ($i = 0, $max = min(10, count($index)); $i < $max; $i++) {
                 /** @var positive-int $seq */
                 $seq = $index[$i];
+                // Move relay from occupiedRelays into freeRelays before trying to get the response from it
+                // in case something happens, so we don't lose it.
                 $relay = $this->occupiedRelays[$seq];
                 $this->freeRelays[] = $relay;
                 unset($this->occupiedRelays[$seq]);
@@ -337,6 +345,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         // Sometimes check if all occupied relays are even still connected
         $this->checkAllOccupiedRelaysStillConnected();
 
+        // Return the last entry on $this->freeRelays so that further code can use unset() instead of array_splice (index handling)
         return array_key_last($this->freeRelays);
     }
 
@@ -353,6 +362,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         $frame = $relay->waitFrame();
 
         if (count($frame->options) !== 2) {
+            // Expect at least a few options
             throw new RPCException('Invalid RPC frame, options missing');
         }
 
@@ -366,6 +376,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         }
 
         if (!$onlySaveResponseInCaseOfMismatchedSeq) {
+            // If we want to save the response, regardless of whether the $seq was a match or not,
+            // we'll need to add it to the buffer.
+            // This is used in e.g. flushing a relay in ensureFreeRelay()
+            // so that we can at least *try* to get the resonse back to the user.
             $this->asyncResponseBuffer[$expectedSeq] = $frame;
         }
 
