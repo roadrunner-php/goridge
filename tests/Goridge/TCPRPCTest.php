@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Goridge;
+namespace Spiral\Goridge\Tests;
 
 use Spiral\Goridge\SocketType;
-use Spiral\Goridge\Tests\MultiRPC;
 
-class TPCMultiRPCTest extends MultiRPC
+class TCPRPCTest extends RPC
 {
     public const SOCK_ADDR = '127.0.0.1';
     public const SOCK_PORT = 7079;
