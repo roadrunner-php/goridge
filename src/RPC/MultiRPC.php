@@ -56,7 +56,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     private int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD;
 
     /**
-     * @param array<int, RelayInterface> $relays
+     * @param array<int, ConnectedRelayInterface> $relays
      */
     public function __construct(
         array $relays,
@@ -116,7 +116,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         $relays = [];
 
         for ($i = 0; $i < $count; $i++) {
-            $relays[] = Relay::create($connection);
+            $relay = Relay::create($connection);
+            assert($relay instanceof ConnectedRelayInterface);
+            $relays[] = $relay;
         }
 
         return new self($relays, $asyncBufferThreshold, $codec);

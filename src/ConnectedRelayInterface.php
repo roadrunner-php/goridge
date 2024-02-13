@@ -9,7 +9,7 @@ use Spiral\Goridge\Exception\RelayException;
  * That connection can also be re-established on the fly (in comparison to StreamRelay, which relies on the existence of the streams).
  * The object is also clonable, i.e. supports cloning without data errors due to shared state.
  */
-interface ConnectedRelayInterface
+interface ConnectedRelayInterface extends RelayInterface
 {
     /**
      * Returns true if the underlying connection is already established
