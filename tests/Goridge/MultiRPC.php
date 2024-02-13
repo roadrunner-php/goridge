@@ -447,7 +447,7 @@ abstract class MultiRPC extends TestCase
         $this->assertSame('pong', $this->rpc->getResponse($id));
         $this->assertFreeRelaysCorrectNumber($this->rpc);
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage('Invalid seq, unknown');
+        $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
         $this->assertSame('pong', $this->rpc->getResponse($id));
     }
 
@@ -543,7 +543,7 @@ abstract class MultiRPC extends TestCase
 
         if ($discovered) {
             $this->expectException(RPCException::class);
-            $this->expectExceptionMessage('Invalid seq, unknown');
+            $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
         } else {
             $this->expectException(TransportException::class);
             $this->expectExceptionMessage('Unable to read payload from the stream');
@@ -581,7 +581,7 @@ abstract class MultiRPC extends TestCase
         }
 
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage('Invalid seq, unknown');
+        $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
         $this->rpc->getResponse($id);
     }
 
@@ -624,7 +624,7 @@ abstract class MultiRPC extends TestCase
 
 
             $this->expectException(RPCException::class);
-            $this->expectExceptionMessage('Invalid seq, unknown');
+            $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
         }
 
         $this->expectException(TransportException::class);
@@ -646,7 +646,7 @@ abstract class MultiRPC extends TestCase
         }
 
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage('Invalid seq, unknown');
+        $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
         foreach ($this->rpc->getResponses($ids) as $response) {
             $this->assertSame('pong', $response);
         }

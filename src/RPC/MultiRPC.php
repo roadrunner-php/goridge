@@ -236,7 +236,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
     public function getResponse(int $seq, mixed $options = null): mixed
     {
-        $relay = $this->seqToRelayMap[$seq] ?? throw new RPCException('Invalid seq, unknown');
+        $relay = $this->seqToRelayMap[$seq] ?? throw new RPCException('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
         unset($this->seqToRelayMap[$seq]);
 
         if (($frame = $this->getResponseFromBuffer($seq)) !== null) {
@@ -279,7 +279,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         // Make sure we have relays for all $seqs, otherwise something went wrong
         if (count($seqsToRelays) !== count($seqsKeyed)) {
-            throw new RPCException("Invalid seq, unknown");
+            throw new RPCException("Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.");
         }
 
         $timeoutInMicroseconds = 0;
@@ -293,7 +293,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 if ($this->checkAllOccupiedRelaysStillConnected()) {
                     // Check if we've lost a relay we were waiting on, if so we need to quit since something is wrong.
                     if (count(array_diff_key($seqsToRelays, $this->occupiedRelays)) > 0) {
-                        throw new RPCException("Invalid seq, unknown");
+                        throw new RPCException("Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.");
                     }
                 }
                 continue;
