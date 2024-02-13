@@ -14,4 +14,14 @@ class MultiRelayHelperTest extends TestCase
         // No message available on STDIN, aka a read would block, so this returns false
         $this->assertFalse(MultiRelayHelper::findRelayWithMessage($relays));
     }
+
+    public function testSupportsReadingFromStreamRelay(): void
+    {
+        $stream = fopen('php://temp', 'rw+');
+        fwrite($stream, 'Hello');
+        fseek($stream, 0);
+        $relays = [new StreamRelay($stream, STDOUT)];
+        $this->assertCount(1, MultiRelayHelper::findRelayWithMessage($relays));
+        fclose($stream);
+    }
 }

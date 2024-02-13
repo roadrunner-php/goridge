@@ -27,4 +27,9 @@ interface ConnectedRelayInterface extends RelayInterface
      * Closes the underlying connection.
      */
     public function close(): void;
+
+    /**
+     * Enforce implementation of __clone magic method
+     */
+    public function __clone();
 }
