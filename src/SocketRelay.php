@@ -225,7 +225,6 @@ class SocketRelay extends Relay implements Stringable, ConnectedRelayInterface
      * @param int<0, max> $timeout Timeout between reconnections in microseconds.
      *
      * @throws RelayException
-     * @throws \Error When sockets are used in unsupported environment.
      */
     public function connect(int $retries = self::RECONNECT_RETRIES, int $timeout = self::RECONNECT_TIMEOUT): bool
     {
