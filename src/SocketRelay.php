@@ -24,7 +24,7 @@ use Stringable;
  *
  * @psalm-suppress DeprecatedInterface
  */
-class SocketRelay extends Relay implements Stringable
+class SocketRelay extends Relay implements Stringable, ConnectedRelayInterface
 {
     final public const RECONNECT_RETRIES = 10;
     final public const RECONNECT_TIMEOUT = 100;
