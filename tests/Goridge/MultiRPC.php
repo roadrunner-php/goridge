@@ -7,6 +7,7 @@ namespace Spiral\Goridge\Tests;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionProperty;
+use Spiral\Goridge\ConnectedRelayInterface;
 use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\MsgpackCodec;
@@ -659,6 +660,7 @@ abstract class MultiRPC extends TestCase
     public function testHandleCloneCorrectly(): void
     {
         $this->rpc->preConnectRelays();
+        $this->rpc->callIgnoreResponse('Service.Ping', 'ping');
         $clonedRpc = $this->rpc->withCodec(new MsgpackCodec());
         for ($i = 0; $i < 50; $i++) {
             $clonedRpc->callIgnoreResponse('Service.Ping', 'ping');
@@ -684,10 +686,90 @@ abstract class MultiRPC extends TestCase
         $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
     }
 
-    public function testAllowsOnlySockets(): void{
+    public function testAllowsOnlySockets(): void
+    {
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage("MultiRPC can only be used with SocketRelay");
+        $this->expectExceptionMessage(
+            sprintf(
+                "MultiRPC can only be used with relays implementing the %s, such as %s",
+                ConnectedRelayInterface::class,
+                SocketRelay::class
+            )
+        );
         $this->rpc = new GoridgeMultiRPC([new StreamRelay(STDIN, STDOUT)]);
+    }
+
+    public function testNeedsAtLeastOne(): void
+    {
+        $this->expectException(RPCException::class);
+        $this->expectExceptionMessage("MultiRPC needs at least one relay. Zero provided.");
+        $this->rpc = new GoridgeMultiRPC([]);
+    }
+
+    public function testChecksIfResponseIsInRelay(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        // Wait a bit
+        usleep(100 * 1000);
+
+        $this->assertTrue($this->rpc->hasResponse($id));
+    }
+
+    public function testChecksIfResponseIsInBuffer(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        // Wait a bit
+        usleep(100 * 1000);
+        $this->forceFlushRpc($this->rpc);
+
+        $this->assertTrue($this->rpc->hasResponse($id));
+    }
+
+    public function testChecksIfResponseIsNotReceivedYet(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $this->assertFalse($this->rpc->hasResponse($id));
+    }
+
+    public function testChecksMultipleResponses(): void
+    {
+        $ids = [];
+        $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        $this->forceFlushRpc($this->rpc);
+        $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        usleep(100 * 1000);
+        $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
+        $responses = $this->rpc->hasResponses($ids);
+        $this->assertContains($ids[0], $responses);
+        $this->assertContains($ids[1], $responses);
+        $this->assertNotContains($ids[2], $responses);
+    }
+
+    public function testHasResponsesReturnsEmptyArrayWhenNoResponses(): void
+    {
+        $id = $this->rpc->callAsync('Service.Ping', 'ping');
+        $this->assertEmpty($this->rpc->hasResponses([$id]));
+    }
+
+    public function testGetResponsesReturnsWhenNoRelaysAvailableToAvoidInfiniteLoop(): void
+    {
+        // occupiedRelays is already empty
+        $rpc = $this->makeRPC();
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $property->setValue($rpc, []);
+        $this->expectException(RPCException::class);
+        $this->expectExceptionMessage("No relays available at all");
+        $rpc->call('Service.Ping', 'ping');
+    }
+
+    public function testMultiRPCIsUsableWithOneRelay(): void
+    {
+        $rpc = $this->makeRPC(1);
+        $rpc->callIgnoreResponse('Service.Ping', 'ping');
+        $rpc->callIgnoreResponse('Service.SleepEcho', 'Hello');
+        $id = $rpc->callAsync('Service.Ping', 'ping');
+        $rpc->callIgnoreResponse('Service.Echo', 'Hello');
+        $this->assertSame('pong', $rpc->getResponse($id));
     }
 
     protected function setUp(): void
@@ -698,13 +780,12 @@ abstract class MultiRPC extends TestCase
     /**
      * @return GoridgeMultiRPC
      */
-    protected function makeRPC(): GoridgeMultiRPC
+    protected function makeRPC(int $count = 10): GoridgeMultiRPC
     {
-        $relays = [];
-        for ($i = 0; $i < 10; $i++) {
-            $relays[] = $this->makeRelay();
-        }
-        return new GoridgeMultiRPC($relays);
+        $type = self::SOCK_TYPE->value;
+        $address = self::SOCK_ADDR;
+        $port = self::SOCK_PORT;
+        return GoridgeMultiRPC::create("$type://$address:$port", $count);
     }
 
     /**

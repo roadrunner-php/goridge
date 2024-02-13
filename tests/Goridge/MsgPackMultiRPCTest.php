@@ -43,8 +43,8 @@ class MsgPackMultiRPCTest extends \Spiral\Goridge\Tests\MultiRPC
     /**
      * @return MultiRPC
      */
-    protected function makeRPC(): MultiRPC
+    protected function makeRPC(int $count = 10): MultiRPC
     {
-        return parent::makeRPC()->withCodec(new MsgpackCodec());
+        return parent::makeRPC($count)->withCodec(new MsgpackCodec());
     }
 }

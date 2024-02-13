@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\RPC;
 
+use Spiral\Goridge\ConnectedRelayInterface;
 use Spiral\Goridge\Exception\RelayException;
 use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\Frame;
@@ -23,18 +24,21 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     private const DEFAULT_BUFFER_THRESHOLD = 10_000;
 
     /**
-     * @var array<int, RelayInterface>
+     * @var array<int, ConnectedRelayInterface>
      */
     private array $freeRelays = [];
 
     /**
-     * Occupied Relays alone is a map of seq to relay to make removal easier once a response is received.
-     * @var array<positive-int, RelayInterface>
+     * Occupied Relays is a map of seq to relay to make removal easier once a response is received.
+     * @var array<positive-int, ConnectedRelayInterface>
      */
     private array $occupiedRelays = [];
 
     /**
-     * @var array<positive-int, RelayInterface>
+     * A map of seq to relay to use for decodeResponse().
+     * Technically the relay there is only needed in case of an error.
+     *
+     * @var array<positive-int, ConnectedRelayInterface>
      */
     private array $seqToRelayMap = [];
 
@@ -46,6 +50,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      */
     private array $asyncResponseBuffer = [];
 
+    /**
+     * The threshold after which the asyncResponseBuffer is flushed of all entries.
+     */
     private int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD;
 
     /**
@@ -56,9 +63,19 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD,
         CodecInterface $codec = new JsonCodec()
     ) {
+        if (count($relays) === 0) {
+            throw new RPCException("MultiRPC needs at least one relay. Zero provided.");
+        }
+
         foreach ($relays as $relay) {
-            if (!($relay instanceof SocketRelay)) {
-                throw new RPCException("MultiRPC can only be used with SocketRelay");
+            if (!($relay instanceof ConnectedRelayInterface)) {
+                throw new RPCException(
+                    sprintf(
+                        "MultiRPC can only be used with relays implementing the %s, such as %s",
+                        ConnectedRelayInterface::class,
+                        SocketRelay::class
+                    )
+                );
             }
         }
 
@@ -106,22 +123,12 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     }
 
     /**
-     * Force-connects all SocketRelays.
-     * Does nothing if no SocketRelay.
+     * Force-connects all relays.
      * @throws RelayException
      */
     public function preConnectRelays(): void
     {
-        if (count($this->freeRelays) === 0) {
-            return;
-        }
-
-        if (!$this->freeRelays[0] instanceof SocketRelay) {
-            return;
-        }
-
         foreach ($this->freeRelays as $relay) {
-            assert($relay instanceof SocketRelay);
             // Force connect
             $relay->connect();
         }
@@ -370,14 +377,11 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     /**
      * Gets a response from the relay, blocking for it if necessary, with some error handling in regards to mismatched seq
      *
-     * @param RelayInterface $relay
      * @param positive-int $expectedSeq
-     * @param bool $onlySaveResponseInCaseOfMismatchedSeq
-     * @return Frame
      */
-    private function getResponseFromRelay(RelayInterface $relay, int $expectedSeq, bool $onlySaveResponseInCaseOfMismatchedSeq = false): Frame
+    private function getResponseFromRelay(ConnectedRelayInterface $relay, int $expectedSeq, bool $onlySaveResponseInCaseOfMismatchedSeq = false): Frame
     {
-        if ($relay instanceof SocketRelay && !$relay->isConnected()) {
+        if (!$relay->isConnected()) {
             throw new TransportException("Unable to read payload from the stream");
         }
 

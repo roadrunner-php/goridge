@@ -89,7 +89,7 @@ class MultiRelayHelper
     }
 
     /**
-     * @param array<array-key, RelayInterface> $relays
+     * @param array<array-key, ConnectedRelayInterface> $relays
      * @return array-key[]|false
      * @internal
      * Returns either
@@ -98,14 +98,14 @@ class MultiRelayHelper
      */
     public static function checkConnected(array $relays): array|false
     {
-        if (count($relays) === 0 || !$relays[array_key_first($relays)] instanceof SocketRelay) {
+        if (count($relays) === 0) {
             return false;
         }
 
         $keysNotConnected = [];
         foreach ($relays as $key => $relay) {
-            assert($relay instanceof SocketRelay);
-            if ($relay->socket === null) {
+            assert($relay instanceof ConnectedRelayInterface);
+            if (!$relay->isConnected()) {
                 $relay->connect();
                 $keysNotConnected[] = $key;
             }
