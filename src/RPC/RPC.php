@@ -16,8 +16,7 @@ class RPC extends AbstractRPC
     public function __construct(
         private readonly RelayInterface $relay,
         CodecInterface          $codec = new JsonCodec(),
-    )
-    {
+    ) {
         parent::__construct($codec);
     }
 

@@ -10,7 +10,6 @@ use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\MultiRelayHelper;
 use Spiral\Goridge\Relay;
-use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\JsonCodec;
 use Spiral\Goridge\RPC\Exception\RPCException;
 use Spiral\Goridge\SocketRelay;
@@ -61,9 +60,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function __construct(
         array $relays,
         int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD,
-        CodecInterface $codec = new JsonCodec()
+        CodecInterface $codec = new JsonCodec(),
     ) {
-        if (count($relays) === 0) {
+        if (\count($relays) === 0) {
             throw new RPCException("MultiRPC needs at least one relay. Zero provided.");
         }
 
