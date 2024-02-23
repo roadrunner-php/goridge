@@ -30,6 +30,7 @@ interface ConnectedRelayInterface extends RelayInterface
 
     /**
      * Enforce implementation of __clone magic method
+     * @psalm-return void
      */
     public function __clone();
 }

@@ -7,7 +7,6 @@ namespace Goridge;
 use Exception;
 use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Spiral\Goridge\RPC\Exception\ServiceException;
-use Spiral\Goridge\RPC\MultiRPC;
 
 class MsgPackMultiRPCTest extends \Spiral\Goridge\Tests\MultiRPC
 {
@@ -17,34 +16,25 @@ class MsgPackMultiRPCTest extends \Spiral\Goridge\Tests\MultiRPC
     public function testJsonException(): void
     {
         $this->expectException(ServiceException::class);
-
-        $conn = $this->makeRPC();
-
-        $conn->call('Service.Process', random_bytes(256));
+        $this->rpc->call('Service.Process', random_bytes(256));
     }
 
     public function testJsonExceptionAsync(): void
     {
-        $conn = $this->makeRPC();
-        $id = $conn->callAsync('Service.Process', random_bytes(256));
+        $id = $this->rpc->callAsync('Service.Process', random_bytes(256));
         $this->expectException(ServiceException::class);
-        $conn->getResponse($id);
+        $this->rpc->getResponse($id);
     }
 
     public function testJsonExceptionNotThrownWithIgnoreResponse(): void
     {
-        $conn = $this->makeRPC();
-        $conn->callIgnoreResponse('Service.Process', random_bytes(256));
-
-        $this->forceFlushRpc($conn);
+        $this->rpc->callIgnoreResponse('Service.Process', random_bytes(256));
+        $this->forceFlushRpc();
     }
 
-
-    /**
-     * @return MultiRPC
-     */
-    protected function makeRPC(int $count = 10): MultiRPC
+    protected function makeRPC(int $count = 10): void
     {
-        return parent::makeRPC($count)->withCodec(new MsgpackCodec());
+        parent::makeRPC($count);
+        $this->rpc = $this->rpc->withCodec(new MsgpackCodec());
     }
 }

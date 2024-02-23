@@ -29,8 +29,7 @@ abstract class AbstractRPC implements RPCInterface
 
     public function __construct(
         protected CodecInterface $codec
-    )
-    {
+    ) {
     }
 
     /**
