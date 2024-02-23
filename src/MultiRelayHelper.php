@@ -89,7 +89,7 @@ class MultiRelayHelper
     }
 
     /**
-     * @param array<array-key, ConnectedRelayInterface> $relays
+     * @param array<array-key, RelayInterface> $relays
      * @return array-key[]|false
      * @internal
      * Returns either
@@ -104,8 +104,7 @@ class MultiRelayHelper
 
         $keysNotConnected = [];
         foreach ($relays as $key => $relay) {
-            assert($relay instanceof ConnectedRelayInterface);
-            if (!$relay->isConnected()) {
+            if ($relay instanceof ConnectedRelayInterface && !$relay->isConnected()) {
                 $relay->connect();
                 $keysNotConnected[] = $key;
             }

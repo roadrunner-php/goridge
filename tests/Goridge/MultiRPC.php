@@ -32,6 +32,9 @@ abstract class MultiRPC extends TestCase
 
     public function testManualConnect(): void
     {
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $property->setValue([]);
+
         $relays = [];
         for ($i = 0; $i < 10; $i++) {
             $relays[] = $this->makeRelay();
@@ -57,6 +60,9 @@ abstract class MultiRPC extends TestCase
 
     public function testReconnect(): void
     {
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $property->setValue([]);
+
         /** @var SocketRelay $relay */
         $relay = $this->makeRelay();
         $this->rpc = new GoridgeMultiRPC([$relay]);
@@ -449,7 +455,7 @@ abstract class MultiRPC extends TestCase
         $this->assertSame('pong', $this->rpc->getResponse($id));
         $this->assertFreeRelaysCorrectNumber($this->rpc);
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
+        $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         $this->assertSame('pong', $this->rpc->getResponse($id));
     }
 
@@ -545,7 +551,7 @@ abstract class MultiRPC extends TestCase
 
         if ($discovered) {
             $this->expectException(RPCException::class);
-            $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
+            $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         } else {
             $this->expectException(TransportException::class);
             $this->expectExceptionMessage('Unable to read payload from the stream');
@@ -583,7 +589,7 @@ abstract class MultiRPC extends TestCase
         }
 
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
+        $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         $this->rpc->getResponse($id);
     }
 
@@ -626,7 +632,7 @@ abstract class MultiRPC extends TestCase
 
 
             $this->expectException(RPCException::class);
-            $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
+            $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         }
 
         $this->expectException(TransportException::class);
@@ -648,7 +654,7 @@ abstract class MultiRPC extends TestCase
         }
 
         $this->expectException(RPCException::class);
-        $this->expectExceptionMessage('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
+        $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         foreach ($this->rpc->getResponses($ids) as $response) {
             $this->assertSame('pong', $response);
         }
@@ -727,21 +733,11 @@ abstract class MultiRPC extends TestCase
         }
     }
 
-    public function testAllowsOnlySockets(): void
-    {
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage(
-            sprintf(
-                "MultiRPC can only be used with relays implementing the %s, such as %s",
-                ConnectedRelayInterface::class,
-                SocketRelay::class
-            )
-        );
-        new GoridgeMultiRPC([new StreamRelay(STDIN, STDOUT)]);
-    }
-
     public function testNeedsAtLeastOne(): void
     {
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $property->setValue([]);
+        $this->expectedNumberOfRelays = 0;
         $this->expectException(RPCException::class);
         $this->expectExceptionMessage("MultiRPC needs at least one relay. Zero provided.");
         new GoridgeMultiRPC([]);
@@ -811,7 +807,27 @@ abstract class MultiRPC extends TestCase
         $this->rpc->callIgnoreResponse('Service.SleepEcho', 'Hello');
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $this->rpc->callIgnoreResponse('Service.Echo', 'Hello');
+        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
         $this->assertSame('pong', $this->rpc->getResponse($id));
+    }
+
+    public function testThrowsWhenMixedRelaysProvided(): void
+    {
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $property->setValue([]);
+        $this->expectedNumberOfRelays = 0;
+        $relays = [new StreamRelay(STDIN, STDOUT), $this->makeRelay()];
+        $this->expectException(RPCException::class);
+        $this->expectExceptionMessage("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
+        new GoridgeMultiRPC($relays);
+    }
+
+    public function testThrowsWhenRelaysDontMatchExistingOnes(): void
+    {
+        $relays = [new StreamRelay(STDIN, STDOUT)];
+        $this->expectException(RPCException::class);
+        $this->expectExceptionMessage("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
+        new GoridgeMultiRPC($relays);
     }
 
     protected function setUp(): void
@@ -821,6 +837,16 @@ abstract class MultiRPC extends TestCase
 
     protected function makeRPC(int $count = 10): void
     {
+        // We need to manually clean the static properties between test runs.
+        // In an actual application this would never happen.
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
+        $property->setValue([]);
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
+        $property->setValue([]);
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
+        $property->setValue([]);
+        $property = new ReflectionProperty(GoridgeMultiRPC::class, 'asyncResponseBuffer');
+        $property->setValue([]);
         $type = self::SOCK_TYPE->value;
         $address = self::SOCK_ADDR;
         $port = self::SOCK_PORT;
@@ -838,10 +864,7 @@ abstract class MultiRPC extends TestCase
 
     protected function tearDown(): void
     {
-        if (isset($this->rpc)) {
-            $this->assertFreeRelaysCorrectNumber();
-            unset($this->rpc);
-        }
+        $this->assertFreeRelaysCorrectNumber();
     }
 
     protected function assertFreeRelaysCorrectNumber(): void

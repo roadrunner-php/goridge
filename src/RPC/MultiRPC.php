@@ -10,6 +10,7 @@ use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\MultiRelayHelper;
 use Spiral\Goridge\Relay;
+use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\JsonCodec;
 use Spiral\Goridge\RPC\Exception\RPCException;
 use Spiral\Goridge\SocketRelay;
@@ -21,15 +22,16 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      * A limit of 1_000 was hit repeatedly. Make it configurable though in case someone wants to change it.
      */
     private const DEFAULT_BUFFER_THRESHOLD = 10_000;
+    const ERR_INVALID_SEQ_NUMBER = 'Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain incorrect number. Please check your code.';
 
     /**
-     * @var array<int, ConnectedRelayInterface>
+     * @var array<int, RelayInterface>
      */
     private static array $freeRelays = [];
 
     /**
      * Occupied Relays is a map of seq to relay to make removal easier once a response is received.
-     * @var array<positive-int, ConnectedRelayInterface>
+     * @var array<positive-int, RelayInterface>
      */
     private static array $occupiedRelays = [];
 
@@ -37,7 +39,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      * A map of seq to relay to use for decodeResponse().
      * Technically the relay there is only needed in case of an error.
      *
-     * @var array<positive-int, ConnectedRelayInterface>
+     * @var array<positive-int, RelayInterface>
      */
     private static array $seqToRelayMap = [];
 
@@ -55,31 +57,51 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     private int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD;
 
     /**
-     * @param array<int, ConnectedRelayInterface> $relays
+     * @param array<int, RelayInterface> $relays
      */
     public function __construct(
         array $relays,
         int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD,
         CodecInterface $codec = new JsonCodec()
     ) {
-        if (count($relays) === 0) {
+        // Check if we have at least one either existing or new relay here
+        if (count($relays) === 0 && count(self::$freeRelays) === 0 && count(self::$occupiedRelays) === 0) {
             throw new RPCException("MultiRPC needs at least one relay. Zero provided.");
         }
 
-        foreach ($relays as $relay) {
-            if (!($relay instanceof ConnectedRelayInterface)) {
-                throw new RPCException(
-                    sprintf(
-                        "MultiRPC can only be used with relays implementing the %s, such as %s",
-                        ConnectedRelayInterface::class,
-                        SocketRelay::class
-                    )
-                );
+        if (count($relays) > 0) {
+            // Check if all new relays are of the same type
+            if (count(array_unique(array_map(static fn(RelayInterface $relay) => $relay::class, $relays))) > 1) {
+                throw new RPCException("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
+            }
+
+            // Check if the existing relays (if any) and the new relays are of the same type.
+            if (count(self::$freeRelays) > 0) {
+                $existingRelay = self::$freeRelays[0];
+            } elseif (count(self::$occupiedRelays) > 0) {
+                $existingRelay = self::$occupiedRelays[array_key_first(self::$occupiedRelays)];
+            } else {
+                $existingRelay = null;
+            }
+
+            if ($existingRelay !== null && $existingRelay::class !== $relays[0]::class) {
+                throw new RPCException("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
             }
         }
 
-        self::$freeRelays = $relays;
-        self::$occupiedRelays = self::$seqToRelayMap = self::$asyncResponseBuffer = [];
+        // The relays (and related arrays) are static to support cloning this class.
+        // Basically the following problem exists:
+        // - If we make these arrays instance variables, then we need to recreate the relays on clone, otherwise we'd run into data issues.
+        // When we do that, the number of relays in existence can increase quite dramatically, resulting in balooning memory usage for socket buffers.
+        // - If we make these arrays static variables, then we need to make certain that they stay the same across all instances
+        // of this class. As a result the arrays are basically only appended on, and never deleted or modified.
+        // In the end that *can* mean that if someone were to repeatedly call `new MultiRPC([a bunch of relays])` that we'd
+        // tack all those relays into this array resulting in the same problem.
+        // It also means that different services can cannibalize the number of relays available to them,
+        // for example a Metrics service and a KV (Cache) service.
+        // IMHO(L3tum) a balooning memory usage that occurs unexpectly is way worse, than any of the other problems. In the end
+        // one can work against cannibalized relays by simply upping the number of relays at any point.
+        self::$freeRelays = [...self::$freeRelays, ...$relays];
         $this->asyncBufferThreshold = $asyncBufferThreshold;
         parent::__construct($codec);
     }
@@ -95,11 +117,11 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         CodecInterface $codec = new JsonCodec()
     ): self {
         assert($count > 0);
+        $count = $count - count(self::$freeRelays) - count(self::$occupiedRelays);
         $relays = [];
 
         for ($i = 0; $i < $count; $i++) {
             $relay = Relay::create($connection);
-            assert($relay instanceof ConnectedRelayInterface);
             $relays[] = $relay;
         }
 
@@ -113,8 +135,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function preConnectRelays(): void
     {
         foreach (self::$freeRelays as $relay) {
-            // Force connect
-            $relay->connect();
+            if ($relay instanceof ConnectedRelayInterface) {
+                // Force connect
+                $relay->connect();
+            }
         }
     }
 
@@ -194,6 +218,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         $relayIndexToSeq = [];
         $seqsWithResponse = [];
 
+        // The behaviour is essentially the same as self::hasResponse, just mapped to multiple $seqs aka $relays.
+        // In order to use MultiRelayHelper we create a map of index => seq to map it back after checking for messages.
         foreach ($seqs as $seq) {
             if (isset(self::$asyncResponseBuffer[$seq])) {
                 $seqsWithResponse[] = $seq;
@@ -219,7 +245,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
     public function getResponse(int $seq, mixed $options = null): mixed
     {
-        $relay = self::$seqToRelayMap[$seq] ?? throw new RPCException('Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.');
+        $relay = self::$seqToRelayMap[$seq] ?? throw new RPCException(self::ERR_INVALID_SEQ_NUMBER);
         unset(self::$seqToRelayMap[$seq]);
 
         if (($frame = $this->getResponseFromBuffer($seq)) !== null) {
@@ -262,7 +288,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         // Make sure we have relays for all $seqs, otherwise something went wrong
         if (count($seqsToRelays) !== count($seqsKeyed)) {
-            throw new RPCException("Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.");
+            throw new RPCException(self::ERR_INVALID_SEQ_NUMBER);
         }
 
         $timeoutInMicroseconds = 0;
@@ -276,7 +302,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 if ($this->checkAllOccupiedRelaysStillConnected()) {
                     // Check if we've lost a relay we were waiting on, if so we need to quit since something is wrong.
                     if (count(array_diff_key($seqsToRelays, self::$occupiedRelays)) > 0) {
-                        throw new RPCException("Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain inccorect number. Please check your code.");
+                        throw new RPCException(self::ERR_INVALID_SEQ_NUMBER);
                     }
                 }
                 continue;
@@ -362,9 +388,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      *
      * @param positive-int $expectedSeq
      */
-    private function getResponseFromRelay(ConnectedRelayInterface $relay, int $expectedSeq, bool $onlySaveResponseInCaseOfMismatchedSeq = false): Frame
+    private function getResponseFromRelay(RelayInterface $relay, int $expectedSeq, bool $onlySaveResponseInCaseOfMismatchedSeq = false): Frame
     {
-        if (!$relay->isConnected()) {
+        if ($relay instanceof ConnectedRelayInterface && !$relay->isConnected()) {
             throw new TransportException("Unable to read payload from the stream");
         }
 
