@@ -24,7 +24,7 @@ use Stringable;
  *
  * @psalm-suppress DeprecatedInterface
  */
-class SocketRelay extends Relay implements Stringable
+class SocketRelay extends Relay implements Stringable, ConnectedRelayInterface
 {
     final public const RECONNECT_RETRIES = 10;
     final public const RECONNECT_TIMEOUT = 100;
@@ -38,7 +38,12 @@ class SocketRelay extends Relay implements Stringable
     /** @var PortType */
     private readonly ?int $port;
     private readonly SocketType $type;
-    private ?Socket $socket = null;
+    /**
+     * @internal
+     * This isn't really ideal but there's no easy way since we need access to the underlying socket
+     * to do a socket_select across multiple SocketRelays.
+     */
+    public ?Socket $socket = null;
 
     /**
      * Example:
@@ -103,6 +108,12 @@ class SocketRelay extends Relay implements Stringable
         }
 
         return "unix://{$this->address}";
+    }
+
+    public function __clone()
+    {
+        // Remove reference to socket on clone
+        $this->socket = null;
     }
 
     public function getAddress(): string
@@ -214,7 +225,6 @@ class SocketRelay extends Relay implements Stringable
      * @param int<0, max> $timeout Timeout between reconnections in microseconds.
      *
      * @throws RelayException
-     * @throws \Error When sockets are used in unsupported environment.
      */
     public function connect(int $retries = self::RECONNECT_RETRIES, int $timeout = self::RECONNECT_TIMEOUT): bool
     {

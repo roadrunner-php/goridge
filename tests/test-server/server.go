@@ -5,6 +5,7 @@ import (
 	"net/rpc"
 	"os"
 	"strings"
+	"time"
 
 	goridgeRpc "github.com/spiral/goridge/v3/pkg/rpc"
 )
@@ -59,6 +60,13 @@ func (s *Service) EchoBinary(msg []byte, out *[]byte) error {
 	*out = append(*out, msg...)
 
 	return nil
+}
+
+// SleepEcho sleeps for 100ms before returning incoming message
+func (s *Service) SleepEcho(msg string, r *string) error {
+    time.Sleep(100 * time.Millisecond)
+    *r = msg
+    return nil
 }
 
 func main() {

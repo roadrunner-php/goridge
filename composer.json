@@ -75,7 +75,7 @@
     "scripts": {
         "test": "phpunit --no-coverage --colors=always",
         "test-cover": "phpunit --coverage-clover=coverage.xml",
-        "test-static": "psalm",
+        "test-static": "psalm --no-cache",
         "test-mutations": "infection"
     },
     "minimum-stability": "dev",
