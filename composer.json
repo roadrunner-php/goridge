@@ -40,7 +40,7 @@
         "php": ">=8.1",
         "ext-json": "*",
         "ext-sockets": "*",
-        "spiral/roadrunner": "^2023"
+        "spiral/roadrunner": "^2023 || ^2024.1"
     },
     "require-dev": {
         "vimeo/psalm": "^5.9",
