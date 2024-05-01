@@ -19,7 +19,7 @@ abstract class Relay implements RelayInterface
      * Example:
      *
      * Relay::create("pipes");
-     * Relay::create("tpc://localhost:6001");
+     * Relay::create("tcp://localhost:6001");
      *
      *
      * @param non-empty-string $connection
