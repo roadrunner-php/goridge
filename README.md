@@ -26,7 +26,7 @@ See https://github.com/spiral/roadrunner - High-performance PHP application serv
  - no external dependencies or services, drop-in (64bit PHP version required)
  - sockets over TCP or Unix (ext-sockets is required), standard pipes
  - very fast (300k calls per second on Ryzen 1700X over 20 threads)
- - native `net/rpc` integration, ability to connect to existed application(s)
+ - native `net/rpc` integration, ability to connect to existing application(s)
  - standalone protocol usage
  - structured data transfer using json or msgpack
  - `[]byte` transfer, including big payloads
