@@ -14,6 +14,11 @@ abstract class Relay implements RelayInterface
     protected const CONNECTION_EXP = '/(?P<protocol>[^:\/]+):\/\/(?P<arg1>[^:]+)(:(?P<arg2>[^:]+))?/';
 
     /**
+     * @var int
+     */
+    private int $seq = 1;
+
+    /**
      * Create relay using string address.
      *
      * Example:
@@ -92,5 +97,13 @@ abstract class Relay implements RelayInterface
         }
 
         return $resource;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNextSeq(): int
+    {
+        return $this->seq++;
     }
 }
