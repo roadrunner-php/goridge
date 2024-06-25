@@ -38,7 +38,7 @@ class SwooleTest extends RPCTest
 
             foreach ($methods as $method) {
                 $barrier = Barrier::make();
-                for ($i = 0; $i < 2; $i++) {
+                for ($i = 0; $i < 5; $i++) {
                     go(function () use ($barrier, $method) {
                         $this->$method();
                     });
