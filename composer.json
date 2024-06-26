@@ -36,7 +36,6 @@
     "suggest": {
         "ext-msgpack": "MessagePack codec support",
         "ext-protobuf": "Protobuf codec support",
-        "ext-swoole": "Swoole gocoroutine support",
         "rybakit/msgpack": "(^0.7) MessagePack codec support",
         "google/protobuf": "(^3.0) Protobuf codec support"
     },

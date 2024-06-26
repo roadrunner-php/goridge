@@ -12,32 +12,12 @@ jobs:
       matrix:
         php: ['7.4', '8.0', '8.1']
         flag: ['--prefer-lowest', '--prefer-stable']
-        include:
-          - php: '7.4'
-            extensions: 'dom, xdebug'
-            test-script: 'composer test-cover -- --exclude-group RPCTest'
-          - php: '7.4'
-            extensions: 'dom, swoole'
-            test-script: 'vendor/bin/phpunit --filter RPCTest'
-          - php: '8.0'
-            extensions: 'dom, xdebug'
-            test-script: 'composer test-cover -- --exclude-group RPCTest'
-          - php: '8.0'
-            extensions: 'dom, swoole'
-            test-script: 'vendor/bin/phpunit --filter RPCTest'
-          - php: '8.1'
-            extensions: 'dom, xdebug'
-            test-script: 'composer test-cover -- --exclude-group RPCTest'
-          - php: '8.1'
-            extensions: 'dom, swoole'
-            test-script: 'vendor/bin/phpunit --filter RPCTest'
-            
     steps:
       - name: Set up PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: ${{ matrix.extensions }}
+          extensions: dom, xdebug, swoole
 
       - name: Check out code
         uses: actions/checkout@v2
@@ -66,7 +46,7 @@ jobs:
         run: docker run --name test-server --rm -d -p "7079:7079/tcp" test-server:local
 
       - name: Run tests
-        run: ${{ matrix.test-script }}
+        run: composer test-cover
 
       - uses: codecov/codecov-action@v1 # Docs: <https://github.com/codecov/codecov-action>
         with:
