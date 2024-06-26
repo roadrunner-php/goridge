@@ -250,61 +250,42 @@ abstract class RPCTest extends TestCase
         $conn->call('Service.Process', random_bytes(256));
     }
 
+    /**
+     * @doesNotPerformAssertions
+     */
     public function testCallSequence(): void
     {
         $relay1 = $this->getMockBuilder(Relay::class)->onlyMethods(['waitFrame', 'send'])->getMock();
         $relay1
             ->method('waitFrame')
-            ->willReturnCallback(function () {
-                static $series = [
-                    [new Frame('Service.Process{}', [1, 15])],
-                    [new Frame('Service.Process{}', [2, 15])],
-                    [new Frame('Service.Process{}', [3, 15])],
-                ];
-
-                [$return] = \array_shift($series);
-
-                return $return;
-        });
+            ->willReturnOnConsecutiveCalls(
+                new Frame('Service.Process{}', [1, 15]),
+                new Frame('Service.Process{}', [2, 15]),
+                new Frame('Service.Process{}', [3, 15])
+            );
         $relay1
             ->method('send')
-            ->willReturnCallback(function (Frame $frame) {
-                static $series = [
-                    [new Frame('Service.Process{"Name":"foo","Value":18}', [1, 15], 8)],
-                    [new Frame('Service.Process{"Name":"foo","Value":18}', [2, 15], 8)],
-                    [new Frame('Service.Process{"Name":"foo","Value":18}', [3, 15], 8)],
-                ];
-
-                [$expectedArgs] = \array_shift($series);
-                self::assertEquals($expectedArgs, $frame);
-            });
+            ->withConsecutive(
+                [new Frame('Service.Process{"Name":"foo","Value":18}', [1, 15], 8)],
+                [new Frame('Service.Process{"Name":"foo","Value":18}', [2, 15], 8)],
+                [new Frame('Service.Process{"Name":"foo","Value":18}', [3, 15], 8)]
+            );
 
         $relay2 = $this->getMockBuilder(Relay::class)->onlyMethods(['waitFrame', 'send'])->getMock();
         $relay2
             ->method('waitFrame')
-            ->willReturnCallback(function () {
-                static $series = [
-                    [new Frame('Service.Process{}', [1, 15])],
-                    [new Frame('Service.Process{}', [2, 15])],
-                    [new Frame('Service.Process{}', [3, 15])],
-                ];
-
-                [$return] = \array_shift($series);
-
-                return $return;
-            });
+            ->willReturnOnConsecutiveCalls(
+                new Frame('Service.Process{}', [1, 15]),
+                new Frame('Service.Process{}', [2, 15]),
+                new Frame('Service.Process{}', [3, 15])
+            );
         $relay2
             ->method('send')
-            ->willReturnCallback(function (Frame $frame) {
-                static $series = [
-                    [new Frame('Service.Process{"Name":"bar","Value":18}', [1, 15], 8)],
-                    [new Frame('Service.Process{"Name":"bar","Value":18}', [2, 15], 8)],
-                    [new Frame('Service.Process{"Name":"bar","Value":18}', [3, 15], 8)],
-                ];
-
-                [$expectedArgs] = \array_shift($series);
-                self::assertEquals($expectedArgs, $frame);
-            });
+            ->withConsecutive(
+                [new Frame('Service.Process{"Name":"bar","Value":18}', [1, 15], 8)],
+                [new Frame('Service.Process{"Name":"bar","Value":18}', [2, 15], 8)],
+                [new Frame('Service.Process{"Name":"bar","Value":18}', [3, 15], 8)]
+            );
 
         $conn1 = new RPC($relay1);
         $conn2 = new RPC($relay2);
