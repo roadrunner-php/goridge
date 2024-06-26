@@ -49,6 +49,7 @@ class RPC implements RPCInterface
     {
         $this->relay = $relay;
         $this->codec = $codec ?? new JsonCodec();
+        /** @psalm-suppress DeprecatedProperty */
         $this->hasSequence = \method_exists($this->relay, 'getNextSequence');
     }
 
@@ -83,6 +84,7 @@ class RPC implements RPCInterface
      */
     public function call(string $method, $payload, $options = null)
     {
+        /** @psalm-suppress DeprecatedMethod */
         $seq = $this->getNextSequence();
 
         $this->relay->send($this->packFrame($method, $payload, $seq));
@@ -187,6 +189,7 @@ class RPC implements RPCInterface
      */
     private function getNextSequence(): int
     {
+        /** @psalm-suppress DeprecatedProperty */
         return $this->hasSequence ? $this->relay->getNextSequence() : self::$seq;
     }
 }
