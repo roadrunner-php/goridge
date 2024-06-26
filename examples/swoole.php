@@ -8,6 +8,9 @@ use Swoole\Coroutine\Barrier;
 
 require 'vendor/autoload.php';
 
+/**
+ * This example demonstrates how to use the package within Swoole coroutines.
+ */
 Co::set(['hook_flags'=> SWOOLE_HOOK_ALL]);
 Co\Run(function () {
     $barrier = Barrier::make();

@@ -6,6 +6,8 @@ namespace Spiral\Goridge\Tests;
 
 use Exception;
 use PHPUnit\Framework\TestCase;
+use Spiral\Goridge\Frame;
+use Spiral\Goridge\Relay;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
@@ -155,7 +157,7 @@ abstract class RPCTest extends TestCase
     {
         $conn = $this->makeRPC();
         $payload = random_bytes(65000 * 1000);
-        
+
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload
@@ -246,6 +248,73 @@ abstract class RPCTest extends TestCase
         $conn = $this->makeRPC();
 
         $conn->call('Service.Process', random_bytes(256));
+    }
+
+    public function testCallSequence(): void
+    {
+        $relay1 = $this->getMockBuilder(Relay::class)->onlyMethods(['waitFrame', 'send'])->getMock();
+        $relay1
+            ->method('waitFrame')
+            ->willReturnCallback(function () {
+                static $series = [
+                    [new Frame('Service.Process{}', [1, 15])],
+                    [new Frame('Service.Process{}', [2, 15])],
+                    [new Frame('Service.Process{}', [3, 15])],
+                ];
+
+                [$return] = \array_shift($series);
+
+                return $return;
+        });
+        $relay1
+            ->method('send')
+            ->willReturnCallback(function (Frame $frame) {
+                static $series = [
+                    [new Frame('Service.Process{"Name":"foo","Value":18}', [1, 15], 8)],
+                    [new Frame('Service.Process{"Name":"foo","Value":18}', [2, 15], 8)],
+                    [new Frame('Service.Process{"Name":"foo","Value":18}', [3, 15], 8)],
+                ];
+
+                [$expectedArgs] = \array_shift($series);
+                self::assertEquals($expectedArgs, $frame);
+            });
+
+        $relay2 = $this->getMockBuilder(Relay::class)->onlyMethods(['waitFrame', 'send'])->getMock();
+        $relay2
+            ->method('waitFrame')
+            ->willReturnCallback(function () {
+                static $series = [
+                    [new Frame('Service.Process{}', [1, 15])],
+                    [new Frame('Service.Process{}', [2, 15])],
+                    [new Frame('Service.Process{}', [3, 15])],
+                ];
+
+                [$return] = \array_shift($series);
+
+                return $return;
+            });
+        $relay2
+            ->method('send')
+            ->willReturnCallback(function (Frame $frame) {
+                static $series = [
+                    [new Frame('Service.Process{"Name":"bar","Value":18}', [1, 15], 8)],
+                    [new Frame('Service.Process{"Name":"bar","Value":18}', [2, 15], 8)],
+                    [new Frame('Service.Process{"Name":"bar","Value":18}', [3, 15], 8)],
+                ];
+
+                [$expectedArgs] = \array_shift($series);
+                self::assertEquals($expectedArgs, $frame);
+            });
+
+        $conn1 = new RPC($relay1);
+        $conn2 = new RPC($relay2);
+
+        $conn1->call('Service.Process', ['Name'  => 'foo', 'Value' => 18]);
+        $conn2->call('Service.Process', ['Name'  => 'bar', 'Value' => 18]);
+        $conn1->call('Service.Process', ['Name'  => 'foo', 'Value' => 18]);
+        $conn2->call('Service.Process', ['Name'  => 'bar', 'Value' => 18]);
+        $conn1->call('Service.Process', ['Name'  => 'foo', 'Value' => 18]);
+        $conn2->call('Service.Process', ['Name'  => 'bar', 'Value' => 18]);
     }
 
     /**

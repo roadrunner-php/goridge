@@ -31,6 +31,17 @@ class RPC implements RPCInterface
     private ?string $service = null;
 
     /**
+     * @var positive-int
+     * @deprecated since v3.2.1.
+     */
+    private static int $seq = 1;
+
+    /**
+     * @deprecated since v3.2.1. Need for backward compatibility.
+     */
+    private bool $hasSequence = false;
+
+    /**
      * @param RelayInterface $relay
      * @param CodecInterface|null $codec
      */
@@ -38,6 +49,7 @@ class RPC implements RPCInterface
     {
         $this->relay = $relay;
         $this->codec = $codec ?? new JsonCodec();
+        $this->hasSequence = \method_exists($this->relay, 'getNextSequence');
     }
 
     /**
@@ -71,7 +83,7 @@ class RPC implements RPCInterface
      */
     public function call(string $method, $payload, $options = null)
     {
-        $seq = $this->relay->getNextSeq();
+        $seq = $this->getNextSequence();
 
         $this->relay->send($this->packFrame($method, $payload, $seq));
 
@@ -85,6 +97,8 @@ class RPC implements RPCInterface
         if ($frame->options[0] !== $seq) {
             throw new RPCException('Invalid RPC frame, sequence mismatch');
         }
+
+        self::$seq++;
 
         return $this->decodeResponse($frame, $options);
     }
@@ -166,5 +180,13 @@ class RPC implements RPCInterface
 
         $body = $method . $this->codec->encode($payload);
         return new Frame($body, [$seq, \strlen($method)], $this->codec->getIndex());
+    }
+
+    /**
+     * @deprecated since v3.2.1.
+     */
+    private function getNextSequence(): int
+    {
+        return $this->hasSequence ? $this->relay->getNextSequence() : self::$seq;
     }
 }
