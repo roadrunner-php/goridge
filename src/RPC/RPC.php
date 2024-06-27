@@ -32,14 +32,8 @@ class RPC implements RPCInterface
 
     /**
      * @var positive-int
-     * @deprecated since v3.2.1.
      */
     private int $seq = 1;
-
-    /**
-     * @deprecated since v3.2.1. Need for backward compatibility.
-     */
-    private bool $hasSequence = false;
 
     /**
      * @param RelayInterface $relay
@@ -49,8 +43,6 @@ class RPC implements RPCInterface
     {
         $this->relay = $relay;
         $this->codec = $codec ?? new JsonCodec();
-        /** @psalm-suppress DeprecatedProperty */
-        $this->hasSequence = \method_exists($this->relay, 'getNextSequence');
     }
 
     /**
@@ -178,7 +170,6 @@ class RPC implements RPCInterface
         }
 
         $body = $method . $this->codec->encode($payload);
-        
         return new Frame($body, [$this->seq, \strlen($method)], $this->codec->getIndex());
     }
 }

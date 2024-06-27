@@ -13,8 +13,6 @@ abstract class Relay implements RelayInterface
     public const PIPES = 'pipes';
     protected const CONNECTION_EXP = '/(?P<protocol>[^:\/]+):\/\/(?P<arg1>[^:]+)(:(?P<arg2>[^:]+))?/';
 
-    private int $sequence = 1;
-
     /**
      * Create relay using string address.
      *
