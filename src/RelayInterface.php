@@ -21,9 +21,4 @@ interface RelayInterface
      * @param Frame $frame
      */
     public function send(Frame $frame): void;
-
-    /**
-     * @return int
-     */
-    public function getNextSeq(): int;
 }

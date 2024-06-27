@@ -31,6 +31,11 @@ class RPC implements RPCInterface
     private ?string $service = null;
 
     /**
+     * @var positive-int
+     */
+    private int $seq = 1;
+
+    /**
      * @param RelayInterface $relay
      * @param CodecInterface|null $codec
      */
@@ -71,9 +76,7 @@ class RPC implements RPCInterface
      */
     public function call(string $method, $payload, $options = null)
     {
-        $seq = $this->relay->getNextSeq();
-
-        $this->relay->send($this->packFrame($method, $payload, $seq));
+        $this->relay->send($this->packFrame($method, $payload));
 
         // wait for the frame confirmation
         $frame = $this->relay->waitFrame();
@@ -82,9 +85,11 @@ class RPC implements RPCInterface
             throw new RPCException('Invalid RPC frame, options missing');
         }
 
-        if ($frame->options[0] !== $seq) {
+        if ($frame->options[0] !== $this->seq) {
             throw new RPCException('Invalid RPC frame, sequence mismatch');
         }
+
+        $this->seq++;
 
         return $this->decodeResponse($frame, $options);
     }
@@ -158,13 +163,13 @@ class RPC implements RPCInterface
      * @param mixed $payload
      * @return Frame
      */
-    private function packFrame(string $method, $payload, int $seq): Frame
+    private function packFrame(string $method, $payload): Frame
     {
         if ($this->service !== null) {
             $method = $this->service . '.' . \ucfirst($method);
         }
 
         $body = $method . $this->codec->encode($payload);
-        return new Frame($body, [$seq, \strlen($method)], $this->codec->getIndex());
+        return new Frame($body, [$this->seq, \strlen($method)], $this->codec->getIndex());
     }
 }
