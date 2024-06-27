@@ -34,7 +34,7 @@ class RPC implements RPCInterface
      * @var positive-int
      * @deprecated since v3.2.1.
      */
-    private static int $seq = 1;
+    private int $seq = 1;
 
     /**
      * @deprecated since v3.2.1. Need for backward compatibility.
@@ -84,10 +84,7 @@ class RPC implements RPCInterface
      */
     public function call(string $method, $payload, $options = null)
     {
-        /** @psalm-suppress DeprecatedMethod */
-        $seq = $this->getNextSequence();
-
-        $this->relay->send($this->packFrame($method, $payload, $seq));
+        $this->relay->send($this->packFrame($method, $payload));
 
         // wait for the frame confirmation
         $frame = $this->relay->waitFrame();
@@ -96,11 +93,11 @@ class RPC implements RPCInterface
             throw new RPCException('Invalid RPC frame, options missing');
         }
 
-        if ($frame->options[0] !== $seq) {
+        if ($frame->options[0] !== $this->seq) {
             throw new RPCException('Invalid RPC frame, sequence mismatch');
         }
 
-        self::$seq++;
+        $this->seq++;
 
         return $this->decodeResponse($frame, $options);
     }
@@ -174,22 +171,14 @@ class RPC implements RPCInterface
      * @param mixed $payload
      * @return Frame
      */
-    private function packFrame(string $method, $payload, int $seq): Frame
+    private function packFrame(string $method, $payload): Frame
     {
         if ($this->service !== null) {
             $method = $this->service . '.' . \ucfirst($method);
         }
 
         $body = $method . $this->codec->encode($payload);
-        return new Frame($body, [$seq, \strlen($method)], $this->codec->getIndex());
-    }
-
-    /**
-     * @deprecated since v3.2.1.
-     */
-    private function getNextSequence(): int
-    {
-        /** @psalm-suppress DeprecatedProperty */
-        return $this->hasSequence ? $this->relay->getNextSequence() : self::$seq;
+        
+        return new Frame($body, [$this->seq, \strlen($method)], $this->codec->getIndex());
     }
 }

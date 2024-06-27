@@ -95,9 +95,4 @@ abstract class Relay implements RelayInterface
 
         return $resource;
     }
-
-    public function getNextSequence(): int
-    {
-        return $this->sequence++;
-    }
 }
