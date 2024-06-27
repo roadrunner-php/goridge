@@ -8,14 +8,17 @@ use Spiral\Goridge\Exception\RelayException;
 
 /**
  * Blocking, duplex relay.
- * @method getNextSequence(): int
  */
 interface RelayInterface
 {
     /**
+     * @return Frame
      * @throws RelayException
      */
     public function waitFrame(): Frame;
 
+    /**
+     * @param Frame $frame
+     */
     public function send(Frame $frame): void;
 }
