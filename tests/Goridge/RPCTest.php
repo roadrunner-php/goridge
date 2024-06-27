@@ -7,7 +7,6 @@ namespace Spiral\Goridge\Tests;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Frame;
-use Spiral\Goridge\Relay;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
@@ -157,7 +156,7 @@ abstract class RPCTest extends TestCase
     {
         $conn = $this->makeRPC();
         $payload = random_bytes(65000 * 1000);
-        
+
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload
@@ -255,7 +254,7 @@ abstract class RPCTest extends TestCase
      */
     public function testCallSequence(): void
     {
-        $relay1 = $this->getMockBuilder(Relay::class)->onlyMethods(['waitFrame', 'send'])->getMock();
+        $relay1 = $this->createMock(RelayInterface::class);
         $relay1
             ->method('waitFrame')
             ->willReturnOnConsecutiveCalls(
@@ -271,7 +270,7 @@ abstract class RPCTest extends TestCase
                 [new Frame('Service.Process{"Name":"foo","Value":18}', [3, 15], 8)]
             );
 
-        $relay2 = $this->getMockBuilder(Relay::class)->onlyMethods(['waitFrame', 'send'])->getMock();
+        $relay2 = $this->createMock(RelayInterface::class);
         $relay2
             ->method('waitFrame')
             ->willReturnOnConsecutiveCalls(
