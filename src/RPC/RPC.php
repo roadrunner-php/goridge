@@ -33,7 +33,7 @@ class RPC implements RPCInterface
     /**
      * @var positive-int
      */
-    private static int $seq = 1;
+    private int $seq = 1;
 
     /**
      * @param RelayInterface $relay
@@ -85,11 +85,11 @@ class RPC implements RPCInterface
             throw new RPCException('Invalid RPC frame, options missing');
         }
 
-        if ($frame->options[0] !== self::$seq) {
+        if ($frame->options[0] !== $this->seq) {
             throw new RPCException('Invalid RPC frame, sequence mismatch');
         }
 
-        self::$seq++;
+        $this->seq++;
 
         return $this->decodeResponse($frame, $options);
     }
@@ -170,6 +170,6 @@ class RPC implements RPCInterface
         }
 
         $body = $method . $this->codec->encode($payload);
-        return new Frame($body, [self::$seq, \strlen($method)], $this->codec->getIndex());
+        return new Frame($body, [$this->seq, \strlen($method)], $this->codec->getIndex());
     }
 }
