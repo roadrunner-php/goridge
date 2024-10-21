@@ -15,7 +15,7 @@ class RPC extends AbstractRPC
 
     public function __construct(
         private readonly RelayInterface $relay,
-        CodecInterface          $codec = new JsonCodec(),
+        CodecInterface $codec = new JsonCodec(),
     )
     {
         parent::__construct($codec);
@@ -32,11 +32,12 @@ class RPC extends AbstractRPC
             throw new RPCException('Invalid RPC frame, options missing');
         }
 
-        if ($frame->options[0] !== self::$seq) {
+        if ($frame->options[0] !== $this->sequence) {
             throw new RPCException('Invalid RPC frame, sequence mismatch');
         }
 
         self::$seq++;
+        $this->sequence++;
 
         return $this->decodeResponse($frame, $this->relay, $options);
     }

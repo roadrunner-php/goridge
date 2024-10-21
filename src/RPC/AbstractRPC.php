@@ -7,11 +7,6 @@ namespace Spiral\Goridge\RPC;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Exception\ServiceException;
-use Stringable;
-use function sprintf;
-use function strlen;
-use function substr;
-use function ucfirst;
 
 abstract class AbstractRPC implements RPCInterface
 {
@@ -24,8 +19,14 @@ abstract class AbstractRPC implements RPCInterface
 
     /**
      * @var positive-int
+     * @deprecated Use $this->sequence instead.
      */
     protected static int $seq = 1;
+
+    /**
+     * @var positive-int
+     */
+    protected int $sequence = 1;
 
     public function __construct(
         protected CodecInterface $codec
@@ -62,14 +63,14 @@ abstract class AbstractRPC implements RPCInterface
     protected function decodeResponse(Frame $frame, RelayInterface $relay, mixed $options = null): mixed
     {
         // exclude method name
-        $body = substr((string)$frame->payload, $frame->options[1]);
+        $body = \substr((string)$frame->payload, $frame->options[1]);
 
         if ($frame->hasFlag(Frame::ERROR)) {
-            $name = $relay instanceof Stringable
+            $name = $relay instanceof \Stringable
                 ? (string)$relay
                 : $relay::class;
 
-            throw new ServiceException(sprintf("Error '%s' on %s", $body, $name));
+            throw new ServiceException(\sprintf("Error '%s' on %s", $body, $name));
         }
 
         return $this->codec->decode($body, $options);
@@ -81,10 +82,10 @@ abstract class AbstractRPC implements RPCInterface
     protected function packFrame(string $method, mixed $payload): Frame
     {
         if ($this->service !== null) {
-            $method = $this->service . '.' . ucfirst($method);
+            $method = $this->service . '.' . \ucfirst($method);
         }
 
         $body = $method . $this->codec->encode($payload);
-        return new Frame($body, [self::$seq, strlen($method)], $this->codec->getIndex());
+        return new Frame($body, [$this->sequence, \strlen($method)], $this->codec->getIndex());
     }
 }

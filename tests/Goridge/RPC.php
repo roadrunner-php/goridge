@@ -6,6 +6,7 @@ namespace Spiral\Goridge\Tests;
 
 use Exception;
 use PHPUnit\Framework\TestCase;
+use Spiral\Goridge\Frame;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
@@ -247,6 +248,59 @@ abstract class RPC extends TestCase
         $conn = $this->makeRPC();
 
         $conn->call('Service.Process', random_bytes(256));
+    }
+
+    public function testCallSequence(): void
+    {
+        $relay1Matcher = $this->exactly(3);
+        $relay1 = $this->createMock(RelayInterface::class);
+        $relay1
+            ->method('waitFrame')
+            ->willReturnOnConsecutiveCalls(
+                new Frame('Service.Process{}', [1, 15]),
+                new Frame('Service.Process{}', [2, 15]),
+                new Frame('Service.Process{}', [3, 15])
+            );
+        $relay1
+            ->expects($relay1Matcher)
+            ->method('send')
+            ->willReturnCallback(function (Frame $value) use ($relay1Matcher) {
+                match ($relay1Matcher->numberOfInvocations()) {
+                    1 =>  $this->assertEquals(new Frame('Service.Process{"Name":"foo","Value":18}', [1, 15], 8), $value),
+                    2 =>  $this->assertEquals(new Frame('Service.Process{"Name":"foo","Value":18}', [2, 15], 8), $value),
+                    3 =>  $this->assertEquals(new Frame('Service.Process{"Name":"foo","Value":18}', [3, 15], 8), $value),
+                };
+            });
+
+        $relay2Matcher = $this->exactly(3);
+        $relay2 = $this->createMock(RelayInterface::class);
+        $relay2
+            ->method('waitFrame')
+            ->willReturnOnConsecutiveCalls(
+                new Frame('Service.Process{}', [1, 15]),
+                new Frame('Service.Process{}', [2, 15]),
+                new Frame('Service.Process{}', [3, 15])
+            );
+        $relay2
+            ->expects($relay2Matcher)
+            ->method('send')
+            ->willReturnCallback(function (Frame $value) use ($relay2Matcher) {
+                match ($relay2Matcher->numberOfInvocations()) {
+                    1 =>  $this->assertEquals(new Frame('Service.Process{"Name":"bar","Value":18}', [1, 15], 8), $value),
+                    2 =>  $this->assertEquals(new Frame('Service.Process{"Name":"bar","Value":18}', [2, 15], 8), $value),
+                    3 =>  $this->assertEquals(new Frame('Service.Process{"Name":"bar","Value":18}', [3, 15], 8), $value),
+                };
+            });
+
+        $conn1 = new \Spiral\Goridge\RPC\RPC($relay1);
+        $conn2 = new \Spiral\Goridge\RPC\RPC($relay2);
+
+        $conn1->call('Service.Process', ['Name'  => 'foo', 'Value' => 18]);
+        $conn2->call('Service.Process', ['Name'  => 'bar', 'Value' => 18]);
+        $conn1->call('Service.Process', ['Name'  => 'foo', 'Value' => 18]);
+        $conn2->call('Service.Process', ['Name'  => 'bar', 'Value' => 18]);
+        $conn1->call('Service.Process', ['Name'  => 'foo', 'Value' => 18]);
+        $conn2->call('Service.Process', ['Name'  => 'bar', 'Value' => 18]);
     }
 
     /**
