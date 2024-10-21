@@ -150,9 +150,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         $relay->send($this->packFrame($method, $payload));
 
         // wait for the frame confirmation
-        $frame = $this->getResponseFromRelay($relay, self::$seq, true);
+        $frame = $this->getResponseFromRelay($relay, $this->sequence, true);
 
         self::$seq++;
+        $this->sequence++;
 
         return $this->decodeResponse($frame, $relay, $options);
     }
@@ -164,8 +165,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         $relay->send($this->packFrame($method, $payload));
 
-        $seq = self::$seq;
+        $seq = $this->sequence;
         self::$seq++;
+        $this->sequence++;
         self::$occupiedRelays[$seq] = $relay;
         // Last index so no need for array_pop or stuff
         unset(self::$freeRelays[$relayIndex]);
@@ -186,8 +188,9 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         $relay->send($this->packFrame($method, $payload));
 
-        $seq = self::$seq;
+        $seq = $this->sequence;
         self::$seq++;
+        $this->sequence++;
         self::$occupiedRelays[$seq] = $relay;
         self::$seqToRelayMap[$seq] = $relay;
         // Last index so no need for array_pop or stuff
