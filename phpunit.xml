@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
+         cacheResultFile="runtime/.phpunit.result.cache"
          backupGlobals="false"
          colors="true"
          processIsolation="false"
@@ -10,14 +11,23 @@
          stderr="true"
 >
     <testsuites>
-        <testsuite name="Goridge Tests">
-            <directory>tests</directory>
+        <testsuite name="Unit">
+            <directory>tests/Goridge</directory>
         </testsuite>
     </testsuites>
-
     <coverage>
+        <report>
+            <html outputDirectory="runtime/phpunit/coverage"/>
+            <text outputFile="runtime/phpunit/coverage.txt"/>
+            <clover outputFile="runtime/phpunit/logs/clover.xml"/>
+        </report>
+    </coverage>
+    <logging>
+        <junit outputFile="runtime/report.junit.xml"/>
+    </logging>
+    <source>
         <include>
             <directory>src</directory>
         </include>
-    </coverage>
+    </source>
 </phpunit>
