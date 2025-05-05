@@ -16,6 +16,7 @@
         </ignoreFiles>
     </projectFiles>
     <issueHandlers>
+        <MissingClassConstType errorLevel="suppress" />
         <MissingOverrideAttribute errorLevel="suppress" />
         <ClassMustBeFinal errorLevel="suppress" />
     </issueHandlers>

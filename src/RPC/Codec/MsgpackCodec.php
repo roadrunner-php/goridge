@@ -73,9 +73,9 @@ final class MsgpackCodec implements CodecInterface
 
         // Is composer's library supported
         if (\class_exists(MessagePack::class)) {
-            $this->pack = static fn($payload): string => MessagePack::pack($payload);
+            $this->pack = static fn(mixed $payload): string => MessagePack::pack($payload);
 
-            $this->unpack = static fn(string $payload, $options = null) => MessagePack::unpack($payload, $options);
+            $this->unpack = static fn(string $payload, $options = null): mixed => MessagePack::unpack($payload, $options);
         }
 
         throw new \LogicException('Could not initialize codec, please install msgpack extension or library');
