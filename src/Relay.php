@@ -21,7 +21,6 @@ abstract class Relay implements RelayInterface
      * Relay::create("pipes");
      * Relay::create("tcp://localhost:6001");
      *
-     *
      * @param non-empty-string $connection
      */
     public static function create(string $connection): RelayInterface
@@ -46,7 +45,7 @@ abstract class Relay implements RelayInterface
                     : SocketType::UNIX;
 
                 $port = isset($match['arg2'])
-                    ? (int)$match['arg2']
+                    ? (int) $match['arg2']
                     : null;
 
                 /** @psalm-suppress ArgumentTypeCoercion Reason: Checked in the SocketRelay constructor */
@@ -62,6 +61,11 @@ abstract class Relay implements RelayInterface
             default:
                 throw new Exception\RelayFactoryException('unknown connection protocol');
         }
+    }
+
+    public function hasFrame(): bool
+    {
+        return false;
     }
 
     /**
@@ -92,10 +96,5 @@ abstract class Relay implements RelayInterface
         }
 
         return $resource;
-    }
-
-    public function hasFrame(): bool
-    {
-        return false;
     }
 }

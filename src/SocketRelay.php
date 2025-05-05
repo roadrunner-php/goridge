@@ -9,7 +9,6 @@ use Spiral\Goridge\Exception\HeaderException;
 use Spiral\Goridge\Exception\InvalidArgumentException;
 use Spiral\Goridge\Exception\RelayException;
 use Spiral\Goridge\Exception\TransportException;
-use Stringable;
 
 /**
  * Communicates with remote server/client over be-directional socket using byte payload:
@@ -24,10 +23,17 @@ use Stringable;
  *
  * @psalm-suppress DeprecatedInterface
  */
-class SocketRelay extends Relay implements Stringable, ConnectedRelayInterface
+class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
 {
     final public const RECONNECT_RETRIES = 10;
     final public const RECONNECT_TIMEOUT = 100;
+
+    /**
+     * @internal
+     * This isn't really ideal but there's no easy way since we need access to the underlying socket
+     * to do a socket_select across multiple SocketRelays.
+     */
+    public ?\Socket $socket = null;
 
     /**
      * 1) Pathname to "sock" file in case of UNIX socket
@@ -37,13 +43,8 @@ class SocketRelay extends Relay implements Stringable, ConnectedRelayInterface
 
     /** @var PortType */
     private readonly ?int $port;
+
     private readonly SocketType $type;
-    /**
-     * @internal
-     * This isn't really ideal but there's no easy way since we need access to the underlying socket
-     * to do a socket_select across multiple SocketRelays.
-     */
-    public ?Socket $socket = null;
 
     /**
      * Example:
@@ -89,31 +90,6 @@ class SocketRelay extends Relay implements Stringable, ConnectedRelayInterface
         $this->address = $address;
         $this->port = $port;
         $this->type = $type;
-    }
-
-    /**
-     * Destruct connection and disconnect.
-     */
-    public function __destruct()
-    {
-        if ($this->isConnected()) {
-            $this->close();
-        }
-    }
-
-    public function __toString(): string
-    {
-        if ($this->type === SocketType::TCP) {
-            return "tcp://{$this->address}:{$this->port}";
-        }
-
-        return "unix://{$this->address}";
-    }
-
-    public function __clone()
-    {
-        // Remove reference to socket on clone
-        $this->socket = null;
     }
 
     public function getAddress(): string
@@ -279,7 +255,32 @@ class SocketRelay extends Relay implements Stringable, ConnectedRelayInterface
         $this->socket = null;
     }
 
-    private function createSocket(): Socket|false
+    public function __toString(): string
+    {
+        if ($this->type === SocketType::TCP) {
+            return "tcp://{$this->address}:{$this->port}";
+        }
+
+        return "unix://{$this->address}";
+    }
+
+    public function __clone()
+    {
+        // Remove reference to socket on clone
+        $this->socket = null;
+    }
+
+    /**
+     * Destruct connection and disconnect.
+     */
+    public function __destruct()
+    {
+        if ($this->isConnected()) {
+            $this->close();
+        }
+    }
+
+    private function createSocket(): \Socket|false
     {
         if ($this->type === SocketType::UNIX) {
             return \socket_create(\AF_UNIX, \SOCK_STREAM, 0);

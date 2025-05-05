@@ -43,7 +43,7 @@
     },
     "require-dev": {
         "google/protobuf": "^3.22 || ^4.0",
-        "infection/infection": "^0.29.14",
+        "infection/infection": "^0.29.0",
         "jetbrains/phpstorm-attributes": "^1.0",
         "phpunit/phpunit": "^10.5.45",
         "rybakit/msgpack": "^0.7",

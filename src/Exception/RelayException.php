@@ -4,6 +4,4 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\Exception;
 
-class RelayException extends GoridgeException
-{
-}
+class RelayException extends GoridgeException {}

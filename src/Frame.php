@@ -32,7 +32,7 @@ final class Frame
      */
     public const ERROR = 0x40;
 
-    /**#@+
+    /*#@+
      * BYTE flags, it means, that we can set multiply flags from this group
      * using bitwise OR.
      */
@@ -41,9 +41,9 @@ final class Frame
     public const CODEC_MSGPACK = 0x10;
     public const CODEC_GOB     = 0x20;
     public const CODEC_PROTO   = 0x80;
-    /**#@-*/
+    /*#@-*/
 
-    /**#@+
+    /*#@+
      * BYTE10 flags, it means, that we can set multiply flags from this group
      * using bitwise OR.
      *
@@ -68,33 +68,7 @@ final class Frame
         public ?string $payload,
         public array $options = [],
         public int $flags = 0,
-    ) {
-    }
-
-    public function setFlag(int ...$flag): void
-    {
-        foreach ($flag as $f) {
-            if ($f > 255) {
-                throw new InvalidArgumentException('Flags can be byte only');
-            }
-
-            $this->flags |= $f;
-        }
-    }
-
-    public function hasFlag(int $flag): bool
-    {
-        if ($flag > 255) {
-            throw new InvalidArgumentException('Flags can be byte only');
-        }
-
-        return ($this->flags & $flag) !== 0;
-    }
-
-    public function setOptions(int ...$options): void
-    {
-        $this->options = $options;
-    }
+    ) {}
 
     /**
      * @return non-empty-string
@@ -107,7 +81,7 @@ final class Frame
             'CCL',
             self::VERSION << 4 | (\count($frame->options) + 3),
             $frame->flags,
-            \strlen((string)$frame->payload)
+            \strlen((string) $frame->payload),
         );
 
         if ($frame->options !== []) {
@@ -116,7 +90,7 @@ final class Frame
             $header .= \pack('LCC', \crc32($header), $frame->byte10, $frame->byte11);
         }
 
-        return $header . (string)$frame->payload;
+        return $header . (string) $frame->payload;
     }
 
     /**
@@ -158,5 +132,30 @@ final class Frame
         $frame->byte11 = $header[4] ?? 0;
 
         return $frame;
+    }
+
+    public function setFlag(int ...$flag): void
+    {
+        foreach ($flag as $f) {
+            if ($f > 255) {
+                throw new InvalidArgumentException('Flags can be byte only');
+            }
+
+            $this->flags |= $f;
+        }
+    }
+
+    public function hasFlag(int $flag): bool
+    {
+        if ($flag > 255) {
+            throw new InvalidArgumentException('Flags can be byte only');
+        }
+
+        return ($this->flags & $flag) !== 0;
+    }
+
+    public function setOptions(int ...$options): void
+    {
+        $this->options = $options;
     }
 }

@@ -20,13 +20,6 @@ final class ProtobufCodec implements CodecInterface
         $this->assertAvailable();
     }
 
-    private function assertAvailable(): void
-    {
-        if (!\class_exists(Message::class)) {
-            throw new \LogicException(self::ERROR_DEPENDENCY);
-        }
-    }
-
     public function getIndex(): int
     {
         return Frame::CODEC_PROTO;
@@ -45,16 +38,6 @@ final class ProtobufCodec implements CodecInterface
         return $payload;
     }
 
-    /**
-     * @psalm-suppress UnsafeInstantiation
-     *
-     * @param class-string<Message> $class
-     */
-    protected function create(string $class): Message
-    {
-        return new $class();
-    }
-
     public function decode(string $payload, mixed $options = null): mixed
     {
         if (\is_string($options) && \is_subclass_of($options, Message::class, true)) {
@@ -68,5 +51,22 @@ final class ProtobufCodec implements CodecInterface
         }
 
         return $payload;
+    }
+
+    /**
+     * @psalm-suppress UnsafeInstantiation
+     *
+     * @param class-string<Message> $class
+     */
+    protected function create(string $class): Message
+    {
+        return new $class();
+    }
+
+    private function assertAvailable(): void
+    {
+        if (!\class_exists(Message::class)) {
+            throw new \LogicException(self::ERROR_DEPENDENCY);
+        }
     }
 }
