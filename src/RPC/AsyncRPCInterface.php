@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Spiral\Goridge\RPC;
 
 use Spiral\Goridge\Exception\GoridgeException;
@@ -32,7 +34,6 @@ interface AsyncRPCInterface extends RPCInterface
      * Check whether a response has been received using the "ID" obtained through @see AsyncRPCInterface::callAsync() .
      *
      * @param positive-int $seq
-     * @return bool
      */
     public function hasResponse(int $seq): bool;
 
@@ -57,12 +58,12 @@ interface AsyncRPCInterface extends RPCInterface
     /**
      * Fetches the responses for the "ID"s obtained through @see AsyncRPCInterface::callAsync()
      * and returns a map of "ID" => Response.
-     * @throws RelayException
-     * @throws ServiceException
-     * @throws RPCException
      *
      * @param array<array-key, positive-int> $seqs
      * @return iterable<positive-int, mixed>
+     * @throws RelayException
+     * @throws ServiceException
+     * @throws RPCException
      *
      */
     public function getResponses(array $seqs, mixed $options = null): iterable;

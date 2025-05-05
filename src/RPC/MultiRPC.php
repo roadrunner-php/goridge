@@ -22,7 +22,8 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      * A limit of 1_000 was hit repeatedly. Make it configurable though in case someone wants to change it.
      */
     private const DEFAULT_BUFFER_THRESHOLD = 10_000;
-    const ERR_INVALID_SEQ_NUMBER = 'Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain incorrect number. Please check your code.';
+
+    public const ERR_INVALID_SEQ_NUMBER = 'Invalid sequence number. This may occur if the number was already used, the buffers were flushed due to insufficient getResponse calling, or with a plain incorrect number. Please check your code.';
 
     /**
      * @var array<int, RelayInterface>
@@ -62,24 +63,24 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function __construct(
         array $relays,
         int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD,
-        CodecInterface $codec = new JsonCodec()
+        CodecInterface $codec = new JsonCodec(),
     ) {
         // Check if we have at least one either existing or new relay here
-        if (count($relays) === 0 && count(self::$freeRelays) === 0 && count(self::$occupiedRelays) === 0) {
+        if (\count($relays) === 0 && \count(self::$freeRelays) === 0 && \count(self::$occupiedRelays) === 0) {
             throw new RPCException("MultiRPC needs at least one relay. Zero provided.");
         }
 
-        if (count($relays) > 0) {
+        if (\count($relays) > 0) {
             // Check if all new relays are of the same type
-            if (count(array_unique(array_map(static fn(RelayInterface $relay) => $relay::class, $relays))) > 1) {
+            if (\count(\array_unique(\array_map(static fn(RelayInterface $relay) => $relay::class, $relays))) > 1) {
                 throw new RPCException("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
             }
 
             // Check if the existing relays (if any) and the new relays are of the same type.
-            if (count(self::$freeRelays) > 0) {
+            if (\count(self::$freeRelays) > 0) {
                 $existingRelay = self::$freeRelays[0];
-            } elseif (count(self::$occupiedRelays) > 0) {
-                $existingRelay = self::$occupiedRelays[array_key_first(self::$occupiedRelays)];
+            } elseif (\count(self::$occupiedRelays) > 0) {
+                $existingRelay = self::$occupiedRelays[\array_key_first(self::$occupiedRelays)];
             } else {
                 $existingRelay = null;
             }
@@ -114,10 +115,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         string $connection,
         int $count = 50,
         int $asyncBufferThreshold = self::DEFAULT_BUFFER_THRESHOLD,
-        CodecInterface $codec = new JsonCodec()
+        CodecInterface $codec = new JsonCodec(),
     ): self {
-        assert($count > 0);
-        $count = $count - count(self::$freeRelays) - count(self::$occupiedRelays);
+        \assert($count > 0);
+        $count = $count - \count(self::$freeRelays) - \count(self::$occupiedRelays);
         $relays = [];
 
         for ($i = 0; $i < $count; $i++) {
@@ -174,10 +175,10 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function callAsync(string $method, mixed $payload): int
     {
         // Flush buffer if someone doesn't call getResponse
-        if (count(self::$asyncResponseBuffer) > $this->asyncBufferThreshold) {
+        if (\count(self::$asyncResponseBuffer) > $this->asyncBufferThreshold) {
             // We don't need to clean up occupiedRelays here since the buffer is solely for responses already
             // fetched from relays, and those relays are put back to freeRelays in getNextFreeRelay()
-            self::$seqToRelayMap = array_diff_key(self::$seqToRelayMap, self::$asyncResponseBuffer);
+            self::$seqToRelayMap = \array_diff_key(self::$seqToRelayMap, self::$asyncResponseBuffer);
             self::$asyncResponseBuffer = [];
         }
 
@@ -224,7 +225,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             if (isset(self::$asyncResponseBuffer[$seq])) {
                 $seqsWithResponse[] = $seq;
             } elseif (isset(self::$seqToRelayMap[$seq])) {
-                $relayIndexToSeq[count($relays)] = $seq;
+                $relayIndexToSeq[\count($relays)] = $seq;
                 $relays[] = self::$seqToRelayMap[$seq];
             }
         }
@@ -267,7 +268,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
     public function getResponses(array $seqs, mixed $options = null): iterable
     {
         // Quick return
-        if (count($seqs) === 0) {
+        if (\count($seqs) === 0) {
             return;
         }
 
@@ -284,15 +285,15 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         }
 
         // Fetch all relays that are still occupied and which we need responses from
-        $seqsToRelays = array_intersect_key(self::$occupiedRelays, $seqsKeyed);
+        $seqsToRelays = \array_intersect_key(self::$occupiedRelays, $seqsKeyed);
 
         // Make sure we have relays for all $seqs, otherwise something went wrong
-        if (count($seqsToRelays) !== count($seqsKeyed)) {
+        if (\count($seqsToRelays) !== \count($seqsKeyed)) {
             throw new RPCException(self::ERR_INVALID_SEQ_NUMBER);
         }
 
         $timeoutInMicroseconds = 0;
-        while (count($seqsToRelays) > 0) {
+        while (\count($seqsToRelays) > 0) {
             // Do a first pass without a timeout. Maybe there's already most responses which would make a timeout unnecessary.
             /** @var positive-int[]|false $seqsReceivedResponse */
             $seqsReceivedResponse = MultiRelayHelper::findRelayWithMessage($seqsToRelays, $timeoutInMicroseconds);
@@ -301,7 +302,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             if ($seqsReceivedResponse === false) {
                 if ($this->checkAllOccupiedRelaysStillConnected()) {
                     // Check if we've lost a relay we were waiting on, if so we need to quit since something is wrong.
-                    if (count(array_diff_key($seqsToRelays, self::$occupiedRelays)) > 0) {
+                    if (\count(\array_diff_key($seqsToRelays, self::$occupiedRelays)) > 0) {
                         throw new RPCException(self::ERR_INVALID_SEQ_NUMBER);
                     }
                 }
@@ -330,19 +331,19 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      */
     private function ensureFreeRelayAvailable(): int
     {
-        if (count(self::$freeRelays) > 0) {
+        if (\count(self::$freeRelays) > 0) {
             // Return the last entry on self::$freeRelays so that further code can use unset() instead of array_splice (index handling)
             /** @psalm-return int */
-            return array_key_last(self::$freeRelays);
+            return \array_key_last(self::$freeRelays);
         }
 
-        if (count(self::$occupiedRelays) === 0) {
+        if (\count(self::$occupiedRelays) === 0) {
             // If we have neither freeRelays nor occupiedRelays then someone either initialized this with 0 relays
             // or something went terribly wrong. Either way we need to quit.
             throw new RPCException("No relays available at all");
         }
 
-        while (count(self::$freeRelays) === 0) {
+        while (\count(self::$freeRelays) === 0) {
             /** @var positive-int[]|false $index */
             $index = MultiRelayHelper::findRelayWithMessage(self::$occupiedRelays);
 
@@ -350,15 +351,15 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
                 // Check if all currently occupied relays are even still connected. Do another loop if they aren't.
                 if ($this->checkAllOccupiedRelaysStillConnected()) {
                     continue;
-                } else {
-                    // Just choose the first occupiedRelay to wait on since instead we may busyloop here
-                    // checking relay status and not giving RR the chance to actually answer (in a single core env for example).
-                    $index = [array_key_first(self::$occupiedRelays)];
                 }
+                // Just choose the first occupiedRelay to wait on since instead we may busyloop here
+                // checking relay status and not giving RR the chance to actually answer (in a single core env for example).
+                $index = [\array_key_first(self::$occupiedRelays)];
+
             }
 
             // Flush as many relays as we can up until a limit (arbitrarily 10?)
-            for ($i = 0, $max = min(10, count($index)); $i < $max; $i++) {
+            for ($i = 0, $max = \min(10, \count($index)); $i < $max; $i++) {
                 /** @var positive-int $seq */
                 $seq = $index[$i];
                 // Move relay from occupiedRelays into freeRelays before trying to get the response from it
@@ -380,7 +381,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         $this->checkAllOccupiedRelaysStillConnected();
 
         // Return the last entry on self::$freeRelays so that further code can use unset() instead of array_splice (index handling)
-        return array_key_last(self::$freeRelays);
+        return \array_key_last(self::$freeRelays);
     }
 
     /**
@@ -396,7 +397,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
         $frame = $relay->waitFrame();
 
-        if (count($frame->options) !== 2) {
+        if (\count($frame->options) !== 2) {
             // Expect at least a few options
             throw new RPCException('Invalid RPC frame, options missing');
         }
@@ -425,7 +426,6 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
      * Tries to get a response (Frame) from the buffer and unsets the entry if it finds the response.
      *
      * @param positive-int $seq
-     * @return Frame|null
      */
     private function getResponseFromBuffer(int $seq): ?Frame
     {

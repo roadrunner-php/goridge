@@ -52,7 +52,7 @@ class StreamRelay extends Relay implements BlockingRelayInterface
             throw new InvalidArgumentException('Input resource stream must be readable');
         }
 
-        if (!is_resource($out) || get_resource_type($out) !== 'stream') {
+        if (!\is_resource($out) || \get_resource_type($out) !== 'stream') {
             throw new InvalidArgumentException('Expected a valid output resource stream');
         }
 
@@ -105,13 +105,6 @@ class StreamRelay extends Relay implements BlockingRelayInterface
         return Frame::initFrame($parts, $payload);
     }
 
-    private function getLastErrorMessage(): string
-    {
-        $last = (array)\error_get_last();
-
-        return $last['message'] ?? 'Unknown Error';
-    }
-
     public function send(Frame $frame): void
     {
         $body = Frame::packFrame($frame);
@@ -135,6 +128,13 @@ class StreamRelay extends Relay implements BlockingRelayInterface
         $is = \stream_select($read, $write, $except, 0);
 
         return $is > 0;
+    }
+
+    private function getLastErrorMessage(): string
+    {
+        $last = (array) \error_get_last();
+
+        return $last['message'] ?? 'Unknown Error';
     }
 
     /**

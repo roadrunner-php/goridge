@@ -5,27 +5,30 @@
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
     errorLevel="1"
     resolveFromConfigFile="true"
-    findUnusedBaselineEntry="false"
+    findUnusedBaselineEntry="true"
     findUnusedCode="false"
-    findUnusedPsalmSuppress="true"
+    errorBaseline="psalm-baseline.xml"
 >
-    <stubs>
-        <file name="resources/stubs/msgpack.phpstub" />
-    </stubs>
-    <issueHandlers>
-        <MissingClosureParamType errorLevel="suppress" />
-        <MissingClosureReturnType errorLevel="suppress" />
-        <DocblockTypeContradiction errorLevel="suppress" />
-        <UndefinedDocblockClass >
-            <errorLevel type="suppress">
-                <referencedClass name="Socket"/>
-            </errorLevel>
-        </UndefinedDocblockClass >
-    </issueHandlers>
     <projectFiles>
         <directory name="src" />
         <ignoreFiles>
             <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
+    <issueHandlers>
+        <MissingClassConstType errorLevel="suppress" />
+        <MissingOverrideAttribute errorLevel="suppress" />
+        <ClassMustBeFinal errorLevel="suppress" />
+    </issueHandlers>
+    <forbiddenFunctions>
+        <function name="dd"/>
+        <function name="exit"/>
+        <function name="die"/>
+        <function name="var_dump"/>
+        <function name="echo"/>
+        <function name="print"/>
+        <function name="trap"/>
+        <function name="td"/>
+        <function name="tr"/>
+    </forbiddenFunctions>
 </psalm>

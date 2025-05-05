@@ -17,9 +17,9 @@ final class RawCodec implements CodecInterface
 
     public function encode(mixed $payload): string
     {
-        if (!is_string($payload)) {
+        if (!\is_string($payload)) {
             throw new CodecException(
-                sprintf('Only string payloads can be send using RawCodec, %s given', gettype($payload))
+                \sprintf('Only string payloads can be send using RawCodec, %s given', \gettype($payload)),
             );
         }
 

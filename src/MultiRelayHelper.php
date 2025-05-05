@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Spiral\Goridge;
 
 use Spiral\Goridge\RPC\Exception\RPCException;
-use function socket_select;
 
 class MultiRelayHelper
 {
@@ -19,15 +18,15 @@ class MultiRelayHelper
      */
     public static function findRelayWithMessage(array $relays, int $timeoutInMicroseconds = 0): array|false
     {
-        if (count($relays) === 0) {
+        if (\count($relays) === 0) {
             return false;
         }
 
-        if ($relays[array_key_first($relays)] instanceof SocketRelay) {
+        if ($relays[\array_key_first($relays)] instanceof SocketRelay) {
             $sockets = [];
             $socketIdToRelayIndexMap = [];
             foreach ($relays as $relayIndex => $relay) {
-                assert($relay instanceof SocketRelay);
+                \assert($relay instanceof SocketRelay);
 
                 // Enforce connection
                 if ($relay->socket === null) {
@@ -36,53 +35,53 @@ class MultiRelayHelper
                 }
 
                 $sockets[] = $relay->socket;
-                $socketIdToRelayIndexMap[spl_object_id($relay->socket)] = $relayIndex;
+                $socketIdToRelayIndexMap[\spl_object_id($relay->socket)] = $relayIndex;
             }
 
-            if (count($sockets) === 0) {
+            if (\count($sockets) === 0) {
                 return false;
             }
 
             $writes = null;
             $except = null;
-            $changes = socket_select($sockets, $writes, $except, 0, $timeoutInMicroseconds);
+            $changes = \socket_select($sockets, $writes, $except, 0, $timeoutInMicroseconds);
 
             if ($changes > 0) {
                 $indexes = [];
                 foreach ($sockets as $socket) {
-                    $indexes[] = $socketIdToRelayIndexMap[spl_object_id($socket)] ?? throw new RPCException("Invalid socket??");
+                    $indexes[] = $socketIdToRelayIndexMap[\spl_object_id($socket)] ?? throw new RPCException("Invalid socket??");
                 }
 
                 return $indexes;
-            } else {
-                return false;
             }
+            return false;
+
         }
 
-        if ($relays[array_key_first($relays)] instanceof StreamRelay) {
+        if ($relays[\array_key_first($relays)] instanceof StreamRelay) {
             $streams = [];
             $streamNameToRelayIndexMap = [];
             foreach ($relays as $relayIndex => $relay) {
-                assert($relay instanceof StreamRelay);
+                \assert($relay instanceof StreamRelay);
 
                 $streams[] = $relay->in;
-                $streamNameToRelayIndexMap[(string)$relay->in] = $relayIndex;
+                $streamNameToRelayIndexMap[(string) $relay->in] = $relayIndex;
             }
 
             $writes = null;
             $except = null;
-            $changes = stream_select($streams, $writes, $except, 0, $timeoutInMicroseconds);
+            $changes = \stream_select($streams, $writes, $except, 0, $timeoutInMicroseconds);
 
             if ($changes > 0) {
                 $indexes = [];
                 foreach ($streams as $stream) {
-                    $indexes[] = $streamNameToRelayIndexMap[(string)$stream] ?? throw new RPCException("Invalid stream??");
+                    $indexes[] = $streamNameToRelayIndexMap[(string) $stream] ?? throw new RPCException("Invalid stream??");
                 }
 
                 return $indexes;
-            } else {
-                return false;
             }
+            return false;
+
         }
 
         return false;
@@ -98,7 +97,7 @@ class MultiRelayHelper
      */
     public static function checkConnected(array $relays): array|false
     {
-        if (count($relays) === 0) {
+        if (\count($relays) === 0) {
             return false;
         }
 
