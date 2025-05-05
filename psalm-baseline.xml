@@ -17,11 +17,6 @@
     <MixedReturnStatement>
       <code><![CDATA[msgpack_pack($payload)]]></code>
     </MixedReturnStatement>
-    <UndefinedFunction>
-      <code><![CDATA[msgpack_pack($payload)]]></code>
-      <code><![CDATA[msgpack_unpack($payload)]]></code>
-      <code><![CDATA[msgpack_unpack($payload, $options)]]></code>
-    </UndefinedFunction>
   </file>
   <file src="src/SocketRelay.php">
     <DocblockTypeContradiction>
