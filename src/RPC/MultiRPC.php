@@ -78,7 +78,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
 
             // Check if the existing relays (if any) and the new relays are of the same type.
             if (\count(self::$freeRelays) > 0) {
-                $existingRelay = self::$freeRelays[0];
+                $existingRelay = self::$freeRelays[\array_key_first(self::$freeRelays)];
             } elseif (\count(self::$occupiedRelays) > 0) {
                 $existingRelay = self::$occupiedRelays[\array_key_first(self::$occupiedRelays)];
             } else {
