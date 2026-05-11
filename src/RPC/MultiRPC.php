@@ -77,8 +77,6 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
             }
 
             // Check if the existing relays (if any) and the new relays are of the same type.
-            // Note: self::$freeRelays is not guaranteed to be 0-indexed — entries are removed
-            // via unset() in occupy*() and PHP keeps the highest key ever used on append.
             if (\count(self::$freeRelays) > 0) {
                 $existingRelay = self::$freeRelays[\array_key_first(self::$freeRelays)];
             } elseif (\count(self::$occupiedRelays) > 0) {
