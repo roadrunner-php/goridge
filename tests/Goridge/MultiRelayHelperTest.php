@@ -2,12 +2,14 @@
 
 namespace Goridge;
 
-use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\MultiRelayHelper;
 use Spiral\Goridge\StreamRelay;
 use Spiral\Goridge\Tests\MultiRPC;
+use Testo\Assert;
+use Testo\Test;
 
-class MultiRelayHelperTest extends TestCase
+#[Test]
+final class MultiRelayHelperTest
 {
     // Unfortunately a locally created stream is always "available" and will just return an empty string if no data is available.
     // Thus the test below could only work with a remote stream
@@ -18,11 +20,11 @@ class MultiRelayHelperTest extends TestCase
         $port = MultiRPC::SOCK_PORT;
 
         $in = stream_socket_client("$type://$address:$port");
-        $this->assertTrue(stream_set_blocking($in, true));
-        $this->assertFalse(feof($in));
+        Assert::true(stream_set_blocking($in, true));
+        Assert::false(feof($in));
         $relays = [new StreamRelay($in, STDOUT), new StreamRelay($in, STDERR)];
         // No message available on STDIN, aka a read would block, so this returns false
-        $this->assertFalse(MultiRelayHelper::findRelayWithMessage($relays));
+        Assert::false(MultiRelayHelper::findRelayWithMessage($relays));
         fclose($in);
     }
 
@@ -31,10 +33,10 @@ class MultiRelayHelperTest extends TestCase
         $stream = fopen('php://temp', 'rw+');
         fwrite($stream, 'Hello');
         fseek($stream, 0);
-        $this->assertTrue(stream_set_blocking($stream, true));
-        $this->assertFalse(feof($stream));
+        Assert::true(stream_set_blocking($stream, true));
+        Assert::false(feof($stream));
         $relays = [new StreamRelay($stream, STDOUT)];
-        $this->assertCount(1, MultiRelayHelper::findRelayWithMessage($relays));
+        Assert::count(MultiRelayHelper::findRelayWithMessage($relays), 1);
         fclose($stream);
     }
 }

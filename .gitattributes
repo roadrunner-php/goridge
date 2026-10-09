@@ -8,3 +8,4 @@
 
 /*.xml                 export-ignore
 /*.xml.dist            export-ignore
+/testo.php             export-ignore

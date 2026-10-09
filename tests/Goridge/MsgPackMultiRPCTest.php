@@ -7,22 +7,26 @@ namespace Goridge;
 use Exception;
 use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Spiral\Goridge\RPC\Exception\ServiceException;
+use Testo\Assert\ExpectException;
+use Testo\Expect;
+use Testo\Test;
 
-class MsgPackMultiRPCTest extends \Spiral\Goridge\Tests\MultiRPC
+#[Test]
+final class MsgPackMultiRPCTest extends \Spiral\Goridge\Tests\MultiRPC
 {
     /**
      * @throws Exception
      */
+    #[ExpectException(ServiceException::class)]
     public function testJsonException(): void
     {
-        $this->expectException(ServiceException::class);
         $this->rpc->call('Service.Process', random_bytes(256));
     }
 
     public function testJsonExceptionAsync(): void
     {
         $id = $this->rpc->callAsync('Service.Process', random_bytes(256));
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
         $this->rpc->getResponse($id);
     }
 

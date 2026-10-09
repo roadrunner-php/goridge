@@ -4,26 +4,30 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Exception;
 use Spiral\Goridge\Relay;
 use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\SocketType;
 use Spiral\Goridge\StreamRelay;
+use Testo\Assert;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Test;
 use Throwable;
 
-class StaticFactoryTest extends TestCase
+#[Test]
+final class StaticFactoryTest
 {
     /**
-     * @dataProvider formatProvider
      * @param string $connection
      * @param bool   $expectedException
      */
+    #[DataProvider('formatProvider')]
     public function testFormat(string $connection, bool $expectedException = false): void
     {
-        $this->assertTrue(true);
+        Assert::true(true);
         if ($expectedException) {
-            $this->expectException(Exception\RelayFactoryException::class);
+            Expect::exception(Exception\RelayFactoryException::class);
         }
 
         try {
@@ -74,25 +78,25 @@ class StaticFactoryTest extends TestCase
     {
         /** @var SocketRelay $relay */
         $relay = Relay::create('tcp://localhost:0');
-        $this->assertInstanceOf(SocketRelay::class, $relay);
-        $this->assertSame('localhost', $relay->getAddress());
-        $this->assertSame(0, $relay->getPort());
-        $this->assertSame(SocketType::TCP, $relay->getType());
+        Assert::instanceOf($relay, SocketRelay::class);
+        Assert::same($relay->getAddress(), 'localhost');
+        Assert::same($relay->getPort(), 0);
+        Assert::same($relay->getType(), SocketType::TCP);
     }
 
     public function testUnix(): void
     {
         /** @var SocketRelay $relay */
         $relay = Relay::create('unix:///tmp/rpc.sock');
-        $this->assertInstanceOf(SocketRelay::class, $relay);
-        $this->assertSame('/tmp/rpc.sock', $relay->getAddress());
-        $this->assertSame(SocketType::UNIX, $relay->getType());
+        Assert::instanceOf($relay, SocketRelay::class);
+        Assert::same($relay->getAddress(), '/tmp/rpc.sock');
+        Assert::same($relay->getType(), SocketType::UNIX);
     }
 
     public function testPipes(): void
     {
         /** @var StreamRelay $relay */
         $relay = Relay::create('pipes://stdin:stdout');
-        $this->assertInstanceOf(StreamRelay::class, $relay);
+        Assert::instanceOf($relay, StreamRelay::class);
     }
 }

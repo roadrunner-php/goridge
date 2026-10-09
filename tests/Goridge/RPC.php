@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Spiral\Goridge\Tests;
 
 use Exception;
-use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
@@ -13,94 +12,107 @@ use Spiral\Goridge\RPC\Exception\ServiceException;
 use Spiral\Goridge\RPC\RPC as GoridgeRPC;
 use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\SocketType;
+use Testo\Assert;
+use Testo\Expect;
+use Testo\Test;
 
-abstract class RPC extends TestCase
+abstract class RPC
 {
     public const GO_APP    = 'server';
     public const SOCK_ADDR = '127.0.0.1';
     public const SOCK_PORT = 7079;
     public const SOCK_TYPE = SocketType::TCP;
 
+    #[Test]
     public function testManualConnect(): void
     {
         /** @var SocketRelay $relay */
         $relay = $this->makeRelay();
         $conn = new GoridgeRPC($relay);
 
-        $this->assertFalse($relay->isConnected());
+        Assert::false($relay->isConnected());
 
         $relay->connect();
-        $this->assertTrue($relay->isConnected());
+        Assert::true($relay->isConnected());
 
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
+        Assert::same($conn->call('Service.Ping', 'ping'), 'pong');
+        Assert::true($relay->isConnected());
     }
 
+    #[Test]
     public function testReconnect(): void
     {
         /** @var SocketRelay $relay */
         $relay = $this->makeRelay();
         $conn = new GoridgeRPC($relay);
 
-        $this->assertFalse($relay->isConnected());
+        Assert::false($relay->isConnected());
 
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
+        Assert::same($conn->call('Service.Ping', 'ping'), 'pong');
+        Assert::true($relay->isConnected());
 
         $relay->close();
-        $this->assertFalse($relay->isConnected());
+        Assert::false($relay->isConnected());
 
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
+        Assert::same($conn->call('Service.Ping', 'ping'), 'pong');
+        Assert::true($relay->isConnected());
     }
 
+    #[Test]
     public function testPingPong(): void
     {
         $conn = $this->makeRPC();
-        $this->assertSame('pong', $conn->call('Service.Ping', 'ping'));
+        Assert::same($conn->call('Service.Ping', 'ping'), 'pong');
     }
 
+    #[Test]
     public function testPrefixPingPong(): void
     {
         $conn = $this->makeRPC()->withServicePrefix('Service');
-        $this->assertSame('pong', $conn->call('Ping', 'ping'));
+        Assert::same($conn->call('Ping', 'ping'), 'pong');
     }
 
+    #[Test]
     public function testPingNull(): void
     {
         $conn = $this->makeRPC();
-        $this->assertSame('', $conn->call('Service.Ping', 'not-ping'));
+        Assert::same($conn->call('Service.Ping', 'not-ping'), '');
     }
 
+    #[Test]
     public function testNegate(): void
     {
         $conn = $this->makeRPC();
-        $this->assertSame(-10, $conn->call('Service.Negate', 10));
+        Assert::same($conn->call('Service.Negate', 10), -10);
     }
 
+    #[Test]
     public function testNegateNegative(): void
     {
         $conn = $this->makeRPC();
-        $this->assertSame(10, $conn->call('Service.Negate', -10));
+        Assert::same($conn->call('Service.Negate', -10), 10);
     }
 
+    #[Test]
     public function testInvalidService(): void
     {
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
         $conn = $this->makeRPC()->withServicePrefix('Service2');
-        $this->assertSame('pong', $conn->call('Ping', 'ping'));
+        Assert::same($conn->call('Ping', 'ping'), 'pong');
     }
 
+    #[Test]
     public function testInvalidMethod(): void
     {
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
         $conn = $this->makeRPC()->withServicePrefix('Service');
-        $this->assertSame('pong', $conn->call('Ping2', 'ping'));
+        Assert::same($conn->call('Ping2', 'ping'), 'pong');
     }
 
     /**
      * @throws Exception
      */
+    #[Test]
     public function testLongEcho(): void
     {
         $conn = $this->makeRPC();
@@ -108,17 +120,17 @@ abstract class RPC extends TestCase
 
         $resp = $conn->call('Service.Echo', $payload);
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        Assert::same(strlen($resp), strlen($payload));
+        Assert::same(md5($resp), md5($payload));
     }
 
     /**
      * @throws Exception
      */
+    #[Test]
     public function testConvertException(): void
     {
-        $this->expectException(ServiceException::class);
-        $this->expectExceptionMessage('unknown Raw payload type');
+        Expect::exception(ServiceException::class)->withMessageContaining('unknown Raw payload type');
 
         $conn = $this->makeRPC();
         $payload = base64_encode(random_bytes(65000 * 5));
@@ -128,13 +140,14 @@ abstract class RPC extends TestCase
             $payload
         );
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        Assert::same(strlen($resp), strlen($payload));
+        Assert::same(md5($resp), md5($payload));
     }
 
     /**
      * @throws Exception
      */
+    #[Test]
     public function testRawBody(): void
     {
         $conn = $this->makeRPC();
@@ -145,13 +158,14 @@ abstract class RPC extends TestCase
             $payload
         );
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        Assert::same(strlen($resp), strlen($payload));
+        Assert::same(md5($resp), md5($payload));
     }
 
     /**
      * @throws Exception
      */
+    #[Test]
     public function testLongRawBody(): void
     {
         $conn = $this->makeRPC();
@@ -162,10 +176,11 @@ abstract class RPC extends TestCase
             $payload
         );
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        Assert::same(strlen($resp), strlen($payload));
+        Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testPayload(): void
     {
         $conn = $this->makeRPC();
@@ -178,25 +193,23 @@ abstract class RPC extends TestCase
             ]
         );
 
-        $this->assertSame(
-            [
-                'Name'  => 'WOLFY-J',
-                'Value' => -18,
-                'Keys'  => null
-            ],
-            $resp
-        );
+        Assert::same($resp, [
+            'Name'  => 'WOLFY-J',
+            'Value' => -18,
+            'Keys'  => null
+        ]);
     }
 
+    #[Test]
     public function testBadPayload(): void
     {
-        $this->expectException(ServiceException::class);
-        $this->expectExceptionMessage('unknown Raw payload type');
+        Expect::exception(ServiceException::class)->withMessageContaining('unknown Raw payload type');
 
         $conn = $this->makeRPC();
         $conn->withCodec(new RawCodec())->call('Service.Process', 'raw');
     }
 
+    #[Test]
     public function testPayloadWithMap(): void
     {
         $conn = $this->makeRPC();
@@ -213,17 +226,18 @@ abstract class RPC extends TestCase
             ]
         );
 
-        $this->assertIsArray($resp['Keys']);
-        $this->assertArrayHasKey('value', $resp['Keys']);
-        $this->assertArrayHasKey('domain', $resp['Keys']);
+        Assert::array($resp['Keys']);
+        Assert::array($resp['Keys'])->hasKeys('value');
+        Assert::array($resp['Keys'])->hasKeys('domain');
 
-        $this->assertSame('Key', $resp['Keys']['value']);
-        $this->assertSame('Email', $resp['Keys']['domain']);
+        Assert::same($resp['Keys']['value'], 'Key');
+        Assert::same($resp['Keys']['domain'], 'Email');
     }
 
+    #[Test]
     public function testBrokenPayloadMap(): void
     {
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
 
         $conn = $this->makeRPC();
 
@@ -240,9 +254,10 @@ abstract class RPC extends TestCase
     /**
      * @throws Exception
      */
+    #[Test]
     public function testJsonException(): void
     {
-        $this->expectException(CodecException::class);
+        Expect::exception(CodecException::class);
 
         $conn = $this->makeRPC();
 

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Frame;
 use Spiral\Goridge\StreamRelay;
+use Testo\Assert;
+use Testo\Test;
 
-class StreamTest extends TestCase
+#[Test]
+final class StreamTest
 {
     public function testMessagePassing(): void
     {
@@ -21,6 +23,6 @@ class StreamTest extends TestCase
 
         fseek($resource, 0);
 
-        $this->assertEquals($in, $relay->waitFrame());
+        Assert::equals($relay->waitFrame(), $in);
     }
 }

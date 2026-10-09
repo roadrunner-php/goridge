@@ -2,21 +2,23 @@
 
 namespace Spiral\Goridge\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Frame;
+use Testo\Assert;
+use Testo\Test;
 
-class FrameTest extends TestCase
+#[Test]
+final class FrameTest
 {
     public function testByte10DefaultValue(): void
     {
         $frame = new Frame('');
-        $this->assertSame(0, $frame->byte10);
+        Assert::same($frame->byte10, 0);
     }
 
     public function testByte10DefaultValuePacked(): void
     {
         $string = Frame::packFrame(new Frame(''));
-        $this->assertSame(\chr(0), $string[10]);
+        Assert::same($string[10], \chr(0));
     }
 
     public function testByte10StreamedOutputPacked(): void
@@ -24,6 +26,6 @@ class FrameTest extends TestCase
         $frame = new Frame('');
         $frame->byte10 = Frame::BYTE10_STREAM;
         $string = Frame::packFrame($frame);
-        $this->assertSame(Frame::BYTE10_STREAM, \ord($string[10]));
+        Assert::same(\ord($string[10]), Frame::BYTE10_STREAM);
     }
 }
