@@ -99,4 +99,24 @@ final class StaticFactoryTest
         $relay = Relay::create('pipes://stdin:stdout');
         Assert::instanceOf($relay, StreamRelay::class);
     }
+
+    public function testPipesShortcutUsesStandardStreams(): void
+    {
+        /** @var StreamRelay $relay */
+        $relay = Relay::create('pipes');
+        Assert::instanceOf($relay, StreamRelay::class);
+        Assert::same($relay->in, STDIN);
+    }
+
+    public function testUnknownProtocolIsRejected(): never
+    {
+        Expect::exception(Exception\RelayFactoryException::class)->withMessage('unknown connection protocol');
+        Relay::create('udp://localhost:6001');
+    }
+
+    public function testPipesRequireOutputStream(): never
+    {
+        Expect::exception(Exception\RelayFactoryException::class)->withMessage('Unsupported stream connection format');
+        Relay::create('pipes://stdin');
+    }
 }
