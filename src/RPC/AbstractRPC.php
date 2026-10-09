@@ -29,6 +29,7 @@ abstract class AbstractRPC implements RPCInterface
     /**
      * @psalm-pure
      */
+    #[\Override]
     public function withServicePrefix(string $service): self
     {
         /** @psalm-suppress ImpureVariable */
@@ -41,6 +42,7 @@ abstract class AbstractRPC implements RPCInterface
     /**
      * @psalm-pure
      */
+    #[\Override]
     public function withCodec(CodecInterface $codec): self
     {
         /** @psalm-suppress ImpureVariable */

@@ -44,6 +44,7 @@ class StreamRelay extends Relay implements BlockingRelayInterface
      */
     public function __construct($in, $out)
     {
+        /** @psalm-suppress DocblockTypeContradiction Runtime guard for callers without static analysis */
         if (!\is_resource($in) || \get_resource_type($in) !== 'stream') {
             throw new InvalidArgumentException('Expected a valid input resource stream');
         }
@@ -52,6 +53,7 @@ class StreamRelay extends Relay implements BlockingRelayInterface
             throw new InvalidArgumentException('Input resource stream must be readable');
         }
 
+        /** @psalm-suppress DocblockTypeContradiction Runtime guard for callers without static analysis */
         if (!\is_resource($out) || \get_resource_type($out) !== 'stream') {
             throw new InvalidArgumentException('Expected a valid output resource stream');
         }
@@ -67,6 +69,7 @@ class StreamRelay extends Relay implements BlockingRelayInterface
     /**
      * @throws RelayException
      */
+    #[\Override]
     public function waitFrame(): Frame
     {
         \error_clear_last();
@@ -105,6 +108,7 @@ class StreamRelay extends Relay implements BlockingRelayInterface
         return Frame::initFrame($parts, $payload);
     }
 
+    #[\Override]
     public function send(Frame $frame): void
     {
         $body = Frame::packFrame($frame);
@@ -119,6 +123,7 @@ class StreamRelay extends Relay implements BlockingRelayInterface
         }
     }
 
+    #[\Override]
     public function hasFrame(): bool
     {
         $read = [$this->in];

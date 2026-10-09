@@ -76,6 +76,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
                     throw new InvalidArgumentException(\sprintf("Тo port given for TPC socket on '%s'", $address));
                 }
 
+                /** @psalm-suppress DocblockTypeContradiction Runtime guard for callers without static analysis */
                 if ($port < 0 || $port > 65535) {
                     throw new InvalidArgumentException(\sprintf("Invalid port given for TPC socket on '%s'", $address));
                 }
@@ -114,6 +115,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
      * @psalm-assert-if-true Socket $this->socket
      * @psalm-assert-if-false null $this->socket
      */
+    #[\Override]
     public function isConnected(): bool
     {
         return $this->socket !== null;
@@ -124,6 +126,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
      * @psalm-suppress PossiblyNullArgument Reason: Using the "connect()" method guarantees
      *                 the existence of the socket.
      */
+    #[\Override]
     public function waitFrame(): Frame
     {
         $this->connect();
@@ -167,6 +170,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
      * @psalm-suppress PossiblyNullArgument Reason: Using the "connect()" method guarantees
      *                 the existence of the socket.
      */
+    #[\Override]
     public function send(Frame $frame): void
     {
         $this->connect();
@@ -178,6 +182,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
         }
     }
 
+    #[\Override]
     public function hasFrame(): bool
     {
         if (!$this->isConnected()) {
@@ -202,6 +207,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
      *
      * @throws RelayException
      */
+    #[\Override]
     public function connect(int $retries = self::RECONNECT_RETRIES, int $timeout = self::RECONNECT_TIMEOUT): bool
     {
         \assert($retries >= 1);
@@ -245,6 +251,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
      *
      * @throws RelayException
      */
+    #[\Override]
     public function close(): void
     {
         if (!$this->isConnected()) {
@@ -255,6 +262,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
         $this->socket = null;
     }
 
+    #[\Override]
     public function __toString(): string
     {
         if ($this->type === SocketType::TCP) {
@@ -264,6 +272,7 @@ class SocketRelay extends Relay implements \Stringable, ConnectedRelayInterface
         return "unix://{$this->address}";
     }
 
+    #[\Override]
     public function __clone()
     {
         // Remove reference to socket on clone
