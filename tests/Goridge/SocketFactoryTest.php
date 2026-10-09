@@ -15,19 +15,6 @@ use Testo\Test;
 #[Test]
 final class SocketFactoryTest
 {
-    #[DataProvider('constructorProvider')]
-    public function testConstructing(string $address, ?int $port, SocketType $type, ?string $exception = null): void
-    {
-        Assert::true(true);
-        if ($exception !== null) {
-            Expect::exception($exception);
-        }
-        new SocketRelay($address, $port, $type);
-    }
-
-    /**
-     * @return iterable
-     */
     public static function constructorProvider(): iterable
     {
         return [
@@ -38,5 +25,15 @@ final class SocketFactoryTest
             ['localhost', 66666, SocketType::UNIX],
             ['localhost', 8080, SocketType::TCP],
         ];
+    }
+
+    #[DataProvider('constructorProvider')]
+    public function testConstructing(string $address, ?int $port, SocketType $type, ?string $exception = null): void
+    {
+        Assert::true(true);
+        if ($exception !== null) {
+            Expect::exception($exception);
+        }
+        new SocketRelay($address, $port, $type);
     }
 }

@@ -20,6 +20,17 @@ use Testo\Test;
 #[Covers(StreamRelay::class)]
 final class StreamTest
 {
+    public static function invalidStreamsProvider(): iterable
+    {
+        $closed = fopen('php://memory', 'rb+');
+        fclose($closed);
+
+        yield 'input is not a resource' => ['php://stdin', STDOUT, 'Expected a valid input resource stream'];
+        yield 'input is write-only' => [fopen('php://output', 'wb'), STDOUT, 'Input resource stream must be readable'];
+        yield 'output is closed' => [STDIN, $closed, 'Expected a valid output resource stream'];
+        yield 'output is read-only' => [STDIN, fopen(__FILE__, 'rb'), 'Output resource stream must be writable'];
+    }
+
     public function testMessagePassing(): void
     {
         $resource = fopen('php://memory', 'rb+');
@@ -69,17 +80,6 @@ final class StreamTest
         Expect::exception(InvalidArgumentException::class)->withMessage($message);
 
         new StreamRelay($in, $out);
-    }
-
-    public static function invalidStreamsProvider(): iterable
-    {
-        $closed = fopen('php://memory', 'rb+');
-        fclose($closed);
-
-        yield 'input is not a resource' => ['php://stdin', STDOUT, 'Expected a valid input resource stream'];
-        yield 'input is write-only' => [fopen('php://output', 'wb'), STDOUT, 'Input resource stream must be readable'];
-        yield 'output is closed' => [STDIN, $closed, 'Expected a valid output resource stream'];
-        yield 'output is read-only' => [STDIN, fopen(__FILE__, 'rb'), 'Output resource stream must be writable'];
     }
 
     public function testFailsOnTruncatedHeader(): never

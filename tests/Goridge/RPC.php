@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\Tests;
 
-use Exception;
 use Spiral\Goridge\RelayInterface;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
@@ -117,7 +116,7 @@ abstract class RPC
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[Test]
     public function testLongEcho(): void
@@ -132,7 +131,7 @@ abstract class RPC
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[Test]
     public function testConvertException(): void
@@ -144,7 +143,7 @@ abstract class RPC
 
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.Echo',
-            $payload
+            $payload,
         );
 
         Assert::same(strlen($resp), strlen($payload));
@@ -152,7 +151,7 @@ abstract class RPC
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[Test]
     public function testRawBody(): void
@@ -162,7 +161,7 @@ abstract class RPC
 
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
-            $payload
+            $payload,
         );
 
         Assert::same(strlen($resp), strlen($payload));
@@ -170,7 +169,7 @@ abstract class RPC
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[Test]
     public function testLongRawBody(): void
@@ -180,7 +179,7 @@ abstract class RPC
 
         $resp = $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
-            $payload
+            $payload,
         );
 
         Assert::same(strlen($resp), strlen($payload));
@@ -196,14 +195,14 @@ abstract class RPC
             'Service.Process',
             [
                 'Name'  => 'wolfy-j',
-                'Value' => 18
-            ]
+                'Value' => 18,
+            ],
         );
 
         Assert::same($resp, [
             'Name'  => 'WOLFY-J',
             'Value' => -18,
-            'Keys'  => null
+            'Keys'  => null,
         ]);
     }
 
@@ -228,9 +227,9 @@ abstract class RPC
                 'Value' => 18,
                 'Keys'  => [
                     'Key'   => 'value',
-                    'Email' => 'domain'
-                ]
-            ]
+                    'Email' => 'domain',
+                ],
+            ],
         );
 
         Assert::array($resp['Keys']);
@@ -253,13 +252,13 @@ abstract class RPC
             [
                 'Name'  => 'wolfy-j',
                 'Value' => 18,
-                'Keys'  => 1111
-            ]
+                'Keys'  => 1111,
+            ],
         );
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[Test]
     public function testJsonException(): void
@@ -271,17 +270,11 @@ abstract class RPC
         $conn->call('Service.Process', random_bytes(256));
     }
 
-    /**
-     * @return GoridgeRPC
-     */
     protected function makeRPC(): GoridgeRPC
     {
         return new GoridgeRPC($this->makeRelay());
     }
 
-    /**
-     * @return RelayInterface
-     */
     protected function makeRelay(): RelayInterface
     {
         return new SocketRelay(static::SOCK_ADDR, static::SOCK_PORT, static::SOCK_TYPE);

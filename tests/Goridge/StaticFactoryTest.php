@@ -13,35 +13,10 @@ use Testo\Assert;
 use Testo\Data\DataProvider;
 use Testo\Expect;
 use Testo\Test;
-use Throwable;
 
 #[Test]
 final class StaticFactoryTest
 {
-    /**
-     * @param string $connection
-     * @param bool   $expectedException
-     */
-    #[DataProvider('formatProvider')]
-    public function testFormat(string $connection, bool $expectedException = false): void
-    {
-        Assert::true(true);
-        if ($expectedException) {
-            Expect::exception(Exception\RelayFactoryException::class);
-        }
-
-        try {
-            Relay::create($connection);
-        } catch (Exception\RelayFactoryException $exception) {
-            throw $exception;
-        } catch (Throwable $exception) {
-            //do nothing, that's not a factory issue
-        }
-    }
-
-    /**
-     * @return iterable
-     */
     public static function formatProvider(): iterable
     {
         return [
@@ -72,6 +47,23 @@ final class StaticFactoryTest
             ['TCP://Domain.com:42'],
             ['PIPeS://stdIn:stdErr'],
         ];
+    }
+
+    #[DataProvider('formatProvider')]
+    public function testFormat(string $connection, bool $expectedException = false): void
+    {
+        Assert::true(true);
+        if ($expectedException) {
+            Expect::exception(Exception\RelayFactoryException::class);
+        }
+
+        try {
+            Relay::create($connection);
+        } catch (Exception\RelayFactoryException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            //do nothing, that's not a factory issue
+        }
     }
 
     public function testTCP(): void

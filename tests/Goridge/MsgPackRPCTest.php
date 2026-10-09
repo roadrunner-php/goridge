@@ -25,9 +25,6 @@ final class MsgPackRPCTest extends \Spiral\Goridge\Tests\RPC
         $conn->call('Service.Process', random_bytes(256));
     }
 
-    /**
-     * @return RPC
-     */
     protected function makeRPC(): RPC
     {
         return (new RPC($this->makeRelay()))->withCodec(new MsgpackCodec());
