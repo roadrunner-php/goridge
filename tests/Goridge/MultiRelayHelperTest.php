@@ -2,9 +2,12 @@
 
 namespace Goridge;
 
+use Spiral\Goridge\Frame;
 use Spiral\Goridge\MultiRelayHelper;
+use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\StreamRelay;
 use Spiral\Goridge\Tests\MultiRPC;
+use Spiral\Goridge\Tests\Stub\FakeRelay;
 use Testo\Assert;
 use Testo\Test;
 
@@ -38,5 +41,35 @@ final class MultiRelayHelperTest
         $relays = [new StreamRelay($stream, STDOUT)];
         Assert::count(MultiRelayHelper::findRelayWithMessage($relays), 1);
         fclose($stream);
+    }
+
+    public function testFindsNothingWithoutRelays(): void
+    {
+        Assert::false(MultiRelayHelper::findRelayWithMessage([]));
+    }
+
+    public function testFindsNothingWhenNoSocketRelayIsConnected(): void
+    {
+        $relays = [new SocketRelay('127.0.0.1', 6001), new SocketRelay('127.0.0.1', 6002)];
+
+        Assert::false(MultiRelayHelper::findRelayWithMessage($relays));
+    }
+
+    public function testFindsNothingForUnsupportedRelays(): void
+    {
+        $relay = FakeRelay::echo();
+        $relay->send(new Frame('pending'));
+
+        Assert::false(MultiRelayHelper::findRelayWithMessage([$relay]));
+    }
+
+    public function testCheckConnectedWithoutRelays(): void
+    {
+        Assert::false(MultiRelayHelper::checkConnected([]));
+    }
+
+    public function testCheckConnectedIgnoresRelaysWithoutConnection(): void
+    {
+        Assert::same(MultiRelayHelper::checkConnected(['a' => FakeRelay::echo()]), []);
     }
 }

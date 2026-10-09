@@ -59,6 +59,13 @@ abstract class RPC
     }
 
     #[Test]
+    public function testCreateFromConnectionString(): void
+    {
+        $conn = GoridgeRPC::create(\sprintf('%s://%s:%d', static::SOCK_TYPE->value, static::SOCK_ADDR, static::SOCK_PORT));
+        Assert::same($conn->call('Service.Ping', 'ping'), 'pong');
+    }
+
+    #[Test]
     public function testPingPong(): void
     {
         $conn = $this->makeRPC();
