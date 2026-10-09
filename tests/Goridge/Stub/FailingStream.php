@@ -14,13 +14,13 @@ final class FailingStream
 {
     public const PROTOCOL = 'goridge-failing';
 
+    /** @var resource|null */
+    public $context;
+
     /** @var list<string|false> */
     private static array $reads = [];
 
     private static ?string $warning = null;
-
-    /** @var resource|null */
-    public $context;
 
     /**
      * @param list<string|false> $reads

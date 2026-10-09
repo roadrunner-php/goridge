@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Goridge;
 
-use Exception;
 use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Spiral\Goridge\RPC\Exception\ServiceException;
 use Testo\Assert\ExpectException;
@@ -15,7 +14,7 @@ use Testo\Test;
 final class MsgPackMultiRPCTest extends \Spiral\Goridge\Tests\MultiRPC
 {
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     #[ExpectException(ServiceException::class)]
     public function testJsonException(): void
