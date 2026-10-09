@@ -143,6 +143,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         }
     }
 
+    #[\Override]
     public function call(string $method, mixed $payload, mixed $options = null): mixed
     {
         $relayIndex = $this->ensureFreeRelayAvailable();
@@ -158,6 +159,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         return $this->decodeResponse($frame, $relay, $options);
     }
 
+    #[\Override]
     public function callIgnoreResponse(string $method, mixed $payload): void
     {
         $relayIndex = $this->ensureFreeRelayAvailable();
@@ -172,6 +174,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         unset(self::$freeRelays[$relayIndex]);
     }
 
+    #[\Override]
     public function callAsync(string $method, mixed $payload): int
     {
         // Flush buffer if someone doesn't call getResponse
@@ -197,6 +200,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         return $seq;
     }
 
+    #[\Override]
     public function hasResponse(int $seq): bool
     {
         // Check if we have the response buffered previously due to congestion
@@ -212,6 +216,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         return false;
     }
 
+    #[\Override]
     public function hasResponses(array $seqs): array
     {
         $relays = [];
@@ -244,6 +249,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         return $seqsWithResponse;
     }
 
+    #[\Override]
     public function getResponse(int $seq, mixed $options = null): mixed
     {
         $relay = self::$seqToRelayMap[$seq] ?? throw new RPCException(self::ERR_INVALID_SEQ_NUMBER);
@@ -265,6 +271,7 @@ class MultiRPC extends AbstractRPC implements AsyncRPCInterface
         return $this->decodeResponse($frame, $relay, $options);
     }
 
+    #[\Override]
     public function getResponses(array $seqs, mixed $options = null): iterable
     {
         // Quick return

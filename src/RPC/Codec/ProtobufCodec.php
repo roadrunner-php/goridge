@@ -20,6 +20,7 @@ final class ProtobufCodec implements CodecInterface
         $this->assertAvailable();
     }
 
+    #[\Override]
     public function getIndex(): int
     {
         return Frame::CODEC_PROTO;
@@ -29,6 +30,7 @@ final class ProtobufCodec implements CodecInterface
      * @psalm-suppress MixedInferredReturnType
      * @psalm-suppress MixedReturnStatement
      */
+    #[\Override]
     public function encode(mixed $payload): string
     {
         if ($payload instanceof Message) {
@@ -38,6 +40,7 @@ final class ProtobufCodec implements CodecInterface
         return $payload;
     }
 
+    #[\Override]
     public function decode(string $payload, mixed $options = null): mixed
     {
         if (\is_string($options) && \is_subclass_of($options, Message::class, true)) {

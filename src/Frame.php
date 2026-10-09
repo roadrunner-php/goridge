@@ -121,11 +121,13 @@ final class Frame
      */
     public static function initFrame(array $header, string $body): Frame
     {
+        $unpacked = \unpack('L*', \substr($body, 0, $header[1] * 4));
+
         /**
          * optimize?
          * @var array<int> $options
          */
-        $options = \array_values(\unpack('L*', \substr($body, 0, $header[1] * 4)));
+        $options = $unpacked === false ? [] : \array_values($unpacked);
 
         $frame = new self(\substr($body, $header[1] * 4), $options, $header[0]);
         $frame->byte10 = $header[3] ?? 0;

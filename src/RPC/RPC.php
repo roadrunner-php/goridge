@@ -28,6 +28,7 @@ class RPC extends AbstractRPC
         return new self($relay, $codec);
     }
 
+    #[\Override]
     public function call(string $method, mixed $payload, mixed $options = null): mixed
     {
         $this->relay->send($this->packFrame($method, $payload));

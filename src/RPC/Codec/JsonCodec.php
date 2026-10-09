@@ -10,11 +10,13 @@ use Spiral\Goridge\RPC\Exception\CodecException;
 
 final class JsonCodec implements CodecInterface
 {
+    #[\Override]
     public function getIndex(): int
     {
         return Frame::CODEC_JSON;
     }
 
+    #[\Override]
     public function encode(mixed $payload): string
     {
         try {
@@ -26,6 +28,7 @@ final class JsonCodec implements CodecInterface
         return $result;
     }
 
+    #[\Override]
     public function decode(string $payload, mixed $options = null): mixed
     {
         try {

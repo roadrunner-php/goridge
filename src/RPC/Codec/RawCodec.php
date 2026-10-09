@@ -10,11 +10,13 @@ use Spiral\Goridge\RPC\Exception\CodecException;
 
 final class RawCodec implements CodecInterface
 {
+    #[\Override]
     public function getIndex(): int
     {
         return Frame::CODEC_RAW;
     }
 
+    #[\Override]
     public function encode(mixed $payload): string
     {
         if (!\is_string($payload)) {
@@ -26,6 +28,7 @@ final class RawCodec implements CodecInterface
         return $payload;
     }
 
+    #[\Override]
     public function decode(string $payload, mixed $options = null): mixed
     {
         return $payload;

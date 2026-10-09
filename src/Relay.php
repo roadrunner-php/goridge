@@ -63,6 +63,7 @@ abstract class Relay implements RelayInterface
         }
     }
 
+    #[\Override]
     public function hasFrame(): bool
     {
         return false;
