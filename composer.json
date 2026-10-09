@@ -36,7 +36,7 @@
         "chat": "https://discord.gg/V6EK4he"
     },
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "ext-json": "*",
         "ext-sockets": "*",
         "spiral/roadrunner": "^3.0"
