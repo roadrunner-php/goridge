@@ -1,11 +1,25 @@
+# Line-ending normalization for text files.
 * text=auto
 
-/.*                    export-ignore
-/config/               export-ignore
-/resources/scripts/    export-ignore
-/runtime/              export-ignore
-/tests/                export-ignore
+# PHP-aware hunk headers in `git diff`.
+*.php diff=php
 
-/*.xml                 export-ignore
-/*.xml.dist            export-ignore
-/testo.php             export-ignore
+# List-like manifests: concurrent additions to the same list merge instead of conflicting.
+/composer.json merge=union
+
+# Default: nothing goes into the dist archive. Re-include only what the installed package needs.
+* export-ignore
+
+# Manifest and top-level documentation.
+/composer.json   -export-ignore
+/LICENSE         -export-ignore
+/README.md       -export-ignore
+/CHANGELOG.md    -export-ignore
+
+# Autoloaded source code.
+/src             -export-ignore
+/src/**          -export-ignore
+
+# PhpStorm completion metadata for the package API, picked up by the IDE from vendor.
+/resources       -export-ignore
+/resources/.phpstorm.meta.php -export-ignore
