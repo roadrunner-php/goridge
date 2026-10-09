@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+## [4.3.0](https://github.com/roadrunner-php/goridge/compare/4.2.2...4.3.0) (2026-10-09)
+
+
+### Features
+
+* support RoadRunner v3 ([#38](https://github.com/roadrunner-php/goridge/issues/38)) ([6b5753c](https://github.com/roadrunner-php/goridge/commit/6b5753c183574b7fc8c35f2f8010e8b1be3cc38b))
+
 ## v3.2.0 (22.03.2022)
 - Support for streamed output by @roxblnfk (#13)
 
