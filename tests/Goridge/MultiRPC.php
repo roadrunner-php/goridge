@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\Tests;
 
-use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionProperty;
 use Spiral\Goridge\ConnectedRelayInterface;
@@ -20,8 +19,14 @@ use Spiral\Goridge\RPC\MultiRPC as GoridgeMultiRPC;
 use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\SocketType;
 use Spiral\Goridge\StreamRelay;
+use Spiral\Goridge\Tests\Support\AfterEachTest;
+use Testo\Assert;
+use Testo\Expect;
+use Testo\Lifecycle\BeforeTest;
+use Testo\Test;
 
-abstract class MultiRPC extends TestCase
+#[AfterEachTest('assertFreeRelaysCorrectNumber')]
+abstract class MultiRPC
 {
     public const GO_APP = 'server';
     public const SOCK_ADDR = '127.0.0.1';
@@ -30,6 +35,7 @@ abstract class MultiRPC extends TestCase
     protected GoridgeMultiRPC $rpc;
     private int $expectedNumberOfRelays;
 
+    #[Test]
     public function testManualConnect(): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
@@ -44,20 +50,21 @@ abstract class MultiRPC extends TestCase
         $this->rpc = new GoridgeMultiRPC($relays);
         $this->expectedNumberOfRelays = 10;
 
-        $this->assertFalse($relay->isConnected());
+        \Testo\Assert::false($relay->isConnected());
 
         $relay->connect();
-        $this->assertTrue($relay->isConnected());
+        \Testo\Assert::true($relay->isConnected());
 
-        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
+        \Testo\Assert::same($this->rpc->call('Service.Ping', 'ping'), 'pong');
+        \Testo\Assert::true($relay->isConnected());
 
         $this->rpc->preConnectRelays();
         foreach ($relays as $relay) {
-            $this->assertTrue($relay->isConnected());
+            \Testo\Assert::true($relay->isConnected());
         }
     }
 
+    #[Test]
     public function testReconnect(): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
@@ -68,115 +75,131 @@ abstract class MultiRPC extends TestCase
         $this->rpc = new GoridgeMultiRPC([$relay]);
         $this->expectedNumberOfRelays = 1;
 
-        $this->assertFalse($relay->isConnected());
+        \Testo\Assert::false($relay->isConnected());
 
-        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
+        \Testo\Assert::same($this->rpc->call('Service.Ping', 'ping'), 'pong');
+        \Testo\Assert::true($relay->isConnected());
 
         $relay->close();
-        $this->assertFalse($relay->isConnected());
+        \Testo\Assert::false($relay->isConnected());
 
-        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
-        $this->assertTrue($relay->isConnected());
+        \Testo\Assert::same($this->rpc->call('Service.Ping', 'ping'), 'pong');
+        \Testo\Assert::true($relay->isConnected());
     }
 
+    #[Test]
     public function testPingPong(): void
     {
-        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
+        \Testo\Assert::same($this->rpc->call('Service.Ping', 'ping'), 'pong');
     }
 
+    #[Test]
     public function testPingPongAsync(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
-        $this->assertSame('pong', $this->rpc->getResponse($id));
+        \Testo\Assert::same($this->rpc->getResponse($id), 'pong');
     }
 
+    #[Test]
     public function testPrefixPingPong(): void
     {
         $this->rpc = $this->rpc->withServicePrefix('Service');
-        $this->assertSame('pong', $this->rpc->call('Ping', 'ping'));
+        \Testo\Assert::same($this->rpc->call('Ping', 'ping'), 'pong');
     }
 
+    #[Test]
     public function testPrefixPingPongAsync(): void
     {
         $this->rpc = $this->rpc->withServicePrefix('Service');
         $id = $this->rpc->callAsync('Ping', 'ping');
-        $this->assertSame('pong', $this->rpc->getResponse($id));
+        \Testo\Assert::same($this->rpc->getResponse($id), 'pong');
     }
 
+    #[Test]
     public function testPingNull(): void
     {
-        $this->assertSame('', $this->rpc->call('Service.Ping', 'not-ping'));
+        \Testo\Assert::same($this->rpc->call('Service.Ping', 'not-ping'), '');
     }
 
+    #[Test]
     public function testPingNullAsync(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'not-ping');
-        $this->assertSame('', $this->rpc->getResponse($id));
+        \Testo\Assert::same($this->rpc->getResponse($id), '');
     }
 
+    #[Test]
     public function testNegate(): void
     {
-        $this->assertSame(-10, $this->rpc->call('Service.Negate', 10));
+        \Testo\Assert::same($this->rpc->call('Service.Negate', 10), -10);
     }
 
+    #[Test]
     public function testNegateAsync(): void
     {
         $id = $this->rpc->callAsync('Service.Negate', 10);
-        $this->assertSame(-10, $this->rpc->getResponse($id));
+        \Testo\Assert::same($this->rpc->getResponse($id), -10);
     }
 
+    #[Test]
     public function testNegateNegative(): void
     {
-        $this->assertSame(10, $this->rpc->call('Service.Negate', -10));
+        \Testo\Assert::same($this->rpc->call('Service.Negate', -10), 10);
     }
 
+    #[Test]
     public function testNegateNegativeAsync(): void
     {
         $id = $this->rpc->callAsync('Service.Negate', -10);
-        $this->assertSame(10, $this->rpc->getResponse($id));
+        \Testo\Assert::same($this->rpc->getResponse($id), 10);
     }
 
+    #[Test]
     public function testInvalidService(): void
     {
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
         $this->rpc = $this->rpc->withServicePrefix('Service2');
-        $this->assertSame('pong', $this->rpc->call('Ping', 'ping'));
+        \Testo\Assert::same($this->rpc->call('Ping', 'ping'), 'pong');
     }
 
+    #[Test]
     public function testInvalidServiceAsync(): void
     {
         $this->rpc = $this->rpc->withServicePrefix('Service2');
         $id = $this->rpc->callAsync('Ping', 'ping');
-        $this->expectException(ServiceException::class);
-        $this->assertSame('pong', $this->rpc->getResponse($id));
+        Expect::exception(ServiceException::class);
+        \Testo\Assert::same($this->rpc->getResponse($id), 'pong');
     }
 
+    #[Test]
     public function testInvalidMethod(): void
     {
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
         $this->rpc = $this->rpc->withServicePrefix('Service');
-        $this->assertSame('pong', $this->rpc->call('Ping2', 'ping'));
+        \Testo\Assert::same($this->rpc->call('Ping2', 'ping'), 'pong');
     }
 
+    #[Test]
     public function testInvalidMethodAsync(): void
     {
         $this->rpc = $this->rpc->withServicePrefix('Service');
         $id = $this->rpc->callAsync('Ping2', 'ping');
-        $this->expectException(ServiceException::class);
-        $this->assertSame('pong', $this->rpc->getResponse($id));
+        Expect::exception(ServiceException::class);
+        \Testo\Assert::same($this->rpc->getResponse($id), 'pong');
     }
 
+    #[Test]
     public function testLongEcho(): void
     {
         $payload = base64_encode(random_bytes(65000 * 5));
 
         $resp = $this->rpc->call('Service.Echo', $payload);
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testLongEchoAsync(): void
     {
         $payload = base64_encode(random_bytes(65000 * 5));
@@ -184,14 +207,14 @@ abstract class MultiRPC extends TestCase
         $id = $this->rpc->callAsync('Service.Echo', $payload);
         $resp = $this->rpc->getResponse($id);
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testConvertException(): void
     {
-        $this->expectException(ServiceException::class);
-        $this->expectExceptionMessage('unknown Raw payload type');
+        Expect::exception(ServiceException::class)->withMessageContaining('unknown Raw payload type');
 
         $payload = base64_encode(random_bytes(65000 * 5));
 
@@ -200,10 +223,11 @@ abstract class MultiRPC extends TestCase
             $payload
         );
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testConvertExceptionAsync(): void
     {
         $payload = base64_encode(random_bytes(65000 * 5));
@@ -214,15 +238,15 @@ abstract class MultiRPC extends TestCase
             $payload
         );
 
-        $this->expectException(ServiceException::class);
-        $this->expectExceptionMessage('unknown Raw payload type');
+        Expect::exception(ServiceException::class)->withMessageContaining('unknown Raw payload type');
 
         $resp = $this->rpc->getResponse($id);
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testRawBody(): void
     {
         $payload = random_bytes(100);
@@ -232,10 +256,11 @@ abstract class MultiRPC extends TestCase
             $payload
         );
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testRawBodyAsync(): void
     {
         $payload = random_bytes(100);
@@ -247,10 +272,11 @@ abstract class MultiRPC extends TestCase
         );
         $resp = $this->rpc->getResponse($id);
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testLongRawBody(): void
     {
         $payload = random_bytes(65000 * 1000);
@@ -260,10 +286,11 @@ abstract class MultiRPC extends TestCase
             $payload
         );
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testLongRawBodyAsync(): void
     {
         $payload = random_bytes(65000 * 1000);
@@ -275,10 +302,11 @@ abstract class MultiRPC extends TestCase
         );
         $resp = $this->rpc->getResponse($id);
 
-        $this->assertSame(strlen($payload), strlen($resp));
-        $this->assertSame(md5($payload), md5($resp));
+        \Testo\Assert::same(strlen($resp), strlen($payload));
+        \Testo\Assert::same(md5($resp), md5($payload));
     }
 
+    #[Test]
     public function testPayload(): void
     {
         $resp = $this->rpc->call(
@@ -289,16 +317,14 @@ abstract class MultiRPC extends TestCase
             ]
         );
 
-        $this->assertSame(
-            [
-                'Name' => 'WOLFY-J',
-                'Value' => -18,
-                'Keys' => null
-            ],
-            $resp
-        );
+        \Testo\Assert::same($resp, [
+            'Name' => 'WOLFY-J',
+            'Value' => -18,
+            'Keys' => null
+        ]);
     }
 
+    #[Test]
     public function testPayloadAsync(): void
     {
         $id = $this->rpc->callAsync(
@@ -310,34 +336,32 @@ abstract class MultiRPC extends TestCase
         );
         $resp = $this->rpc->getResponse($id);
 
-        $this->assertSame(
-            [
-                'Name' => 'WOLFY-J',
-                'Value' => -18,
-                'Keys' => null
-            ],
-            $resp
-        );
+        \Testo\Assert::same($resp, [
+            'Name' => 'WOLFY-J',
+            'Value' => -18,
+            'Keys' => null
+        ]);
     }
 
+    #[Test]
     public function testBadPayload(): void
     {
-        $this->expectException(ServiceException::class);
-        $this->expectExceptionMessage('unknown Raw payload type');
+        Expect::exception(ServiceException::class)->withMessageContaining('unknown Raw payload type');
 
         $this->rpc->withCodec(new RawCodec())->call('Service.Process', 'raw');
     }
 
+    #[Test]
     public function testBadPayloadAsync(): void
     {
         $this->rpc = $this->rpc->withCodec(new RawCodec());
         $id = $this->rpc->callAsync('Service.Process', 'raw');
 
-        $this->expectException(ServiceException::class);
-        $this->expectExceptionMessage('unknown Raw payload type');
+        Expect::exception(ServiceException::class)->withMessageContaining('unknown Raw payload type');
         $resp = $this->rpc->getResponse($id);
     }
 
+    #[Test]
     public function testPayloadWithMap(): void
     {
         $resp = $this->rpc->call(
@@ -352,14 +376,15 @@ abstract class MultiRPC extends TestCase
             ]
         );
 
-        $this->assertIsArray($resp['Keys']);
-        $this->assertArrayHasKey('value', $resp['Keys']);
-        $this->assertArrayHasKey('domain', $resp['Keys']);
+        \Testo\Assert::array($resp['Keys']);
+        \Testo\Assert::array($resp['Keys'])->hasKeys('value');
+        \Testo\Assert::array($resp['Keys'])->hasKeys('domain');
 
-        $this->assertSame('Key', $resp['Keys']['value']);
-        $this->assertSame('Email', $resp['Keys']['domain']);
+        \Testo\Assert::same($resp['Keys']['value'], 'Key');
+        \Testo\Assert::same($resp['Keys']['domain'], 'Email');
     }
 
+    #[Test]
     public function testPayloadWithMapAsync(): void
     {
         $id = $this->rpc->callAsync(
@@ -375,14 +400,15 @@ abstract class MultiRPC extends TestCase
         );
         $resp = $this->rpc->getResponse($id);
 
-        $this->assertIsArray($resp['Keys']);
-        $this->assertArrayHasKey('value', $resp['Keys']);
-        $this->assertArrayHasKey('domain', $resp['Keys']);
+        \Testo\Assert::array($resp['Keys']);
+        \Testo\Assert::array($resp['Keys'])->hasKeys('value');
+        \Testo\Assert::array($resp['Keys'])->hasKeys('domain');
 
-        $this->assertSame('Key', $resp['Keys']['value']);
-        $this->assertSame('Email', $resp['Keys']['domain']);
+        \Testo\Assert::same($resp['Keys']['value'], 'Key');
+        \Testo\Assert::same($resp['Keys']['domain'], 'Email');
     }
 
+    #[Test]
     public function testBrokenPayloadMap(): void
     {
         $id = $this->rpc->callAsync(
@@ -394,71 +420,77 @@ abstract class MultiRPC extends TestCase
             ]
         );
 
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
         $resp = $this->rpc->getResponse($id);
     }
 
+    #[Test]
     public function testJsonException(): void
     {
-        $this->expectException(CodecException::class);
-
+        Expect::exception(CodecException::class);
         $this->rpc->call('Service.Process', random_bytes(256));
     }
 
+    #[Test]
     public function testJsonExceptionAsync(): void
     {
-        $this->expectException(CodecException::class);
+        Expect::exception(CodecException::class);
         $id = $this->rpc->callAsync('Service.Process', random_bytes(256));
     }
 
+    #[Test]
     public function testJsonExceptionNotThrownWithIgnoreResponse(): void
     {
-        $this->expectException(CodecException::class);
+        Expect::exception(CodecException::class);
         $this->rpc->callIgnoreResponse('Service.Process', random_bytes(256));
     }
 
+    #[Test]
     public function testSleepEcho(): void
     {
         $time = hrtime(true) / 1e9;
-        $this->assertSame('Hello', $this->rpc->call('Service.SleepEcho', 'Hello'));
+        \Testo\Assert::same($this->rpc->call('Service.SleepEcho', 'Hello'), 'Hello');
         // sleep is 100ms, so we check if we are further along than 100ms
-        $this->assertGreaterThanOrEqual($time + 0.1, hrtime(true) / 1e9);
+        \Testo\Assert::numeric(hrtime(true) / 1e9)->greaterThanOrEqual($time + 0.1);
     }
 
+    #[Test]
     public function testSleepEchoAsync(): void
     {
         $time = hrtime(true) / 1e9;
         $id = $this->rpc->callAsync('Service.SleepEcho', 'Hello');
         // hrtime is in nanoseconds, and at most expect 1ms delay (sleep is 100ms)
-        $this->assertLessThanOrEqual($time + 0.001, hrtime(true) / 1e9);
-        $this->assertFalse($this->rpc->hasResponse($id));
-        $this->assertSame('Hello', $this->rpc->getResponse($id));
+        \Testo\Assert::numeric(hrtime(true) / 1e9)->lessThanOrEqual($time + 0.001);
+        \Testo\Assert::false($this->rpc->hasResponse($id));
+        \Testo\Assert::same($this->rpc->getResponse($id), 'Hello');
         // sleep is 100ms, so we check if we are further along than 100ms
-        $this->assertGreaterThanOrEqual($time + 0.1, hrtime(true) / 1e9);
+        \Testo\Assert::numeric(hrtime(true) / 1e9)->greaterThanOrEqual($time + 0.1);
     }
 
+    #[Test]
     public function testSleepEchoIgnoreResponse(): void
     {
         $time = hrtime(true) / 1e9;
         $this->rpc->callIgnoreResponse('Service.SleepEcho', 'Hello');
         // hrtime is in nanoseconds, and at most expect 1ms delay (sleep is 100ms)
-        $this->assertLessThanOrEqual($time + 0.001, hrtime(true) / 1e9);
+        \Testo\Assert::numeric(hrtime(true) / 1e9)->lessThanOrEqual($time + 0.001);
         // Wait for response
         usleep(100_000);
 
         $this->forceFlushRpc();
     }
 
+    #[Test]
     public function testCannotGetSameResponseTwice(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
-        $this->assertSame('pong', $this->rpc->getResponse($id));
+        \Testo\Assert::same($this->rpc->getResponse($id), 'pong');
         $this->assertFreeRelaysCorrectNumber($this->rpc);
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
-        $this->assertSame('pong', $this->rpc->getResponse($id));
+        Expect::exception(RPCException::class)->withMessageContaining(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
+        \Testo\Assert::same($this->rpc->getResponse($id), 'pong');
     }
 
+    #[Test]
     public function testCanCallMoreTimesThanRelays(): void
     {
         $ids = [];
@@ -468,10 +500,11 @@ abstract class MultiRPC extends TestCase
         }
 
         foreach ($this->rpc->getResponses($ids) as $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
         }
     }
 
+    #[Test]
     public function testCanCallMoreTimesThanBufferAndNotGetResponses(): void
     {
         $ids = [];
@@ -481,7 +514,7 @@ abstract class MultiRPC extends TestCase
             $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
         }
 
-        $this->expectException(RPCException::class);
+        Expect::exception(RPCException::class);
 
         // We cheat here since the order in which responses are discarded depends on when they are received
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'asyncResponseBuffer');
@@ -490,11 +523,12 @@ abstract class MultiRPC extends TestCase
         foreach ($ids as $id) {
             if (!isset($buffer[$id])) {
                 $this->rpc->getResponse($id);
-                $this->fail("Invalid seq did not throw exception");
+                \Testo\Assert::fail("Invalid seq did not throw exception");
             }
         }
     }
 
+    #[Test]
     public function testCanCallMoreTimesThanRelaysWithIntermittentResponseHandling(): void
     {
         $ids = [];
@@ -502,7 +536,7 @@ abstract class MultiRPC extends TestCase
         for ($i = 0; $i < 150; $i++) {
             if ($i === 50) {
                 foreach ($this->rpc->getResponses($ids) as $response) {
-                    $this->assertSame('pong', $response);
+                    \Testo\Assert::same($response, 'pong');
                 }
                 $ids = [];
             }
@@ -510,27 +544,29 @@ abstract class MultiRPC extends TestCase
         }
 
         foreach ($this->rpc->getResponses($ids) as $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
         }
     }
 
+    #[Test]
     public function testHandleRelayDisconnect(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
         $occupiedRelays = $property->getValue();
-        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        \Testo\Assert::instanceOf($occupiedRelays[$id], SocketRelay::class);
         $occupiedRelays[$id]->close();
-        $this->expectException(TransportException::class);
+        Expect::exception(TransportException::class);
         $this->rpc->getResponse($id);
     }
 
+    #[Test]
     public function testHandleRelayDisconnectWithPressure(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
         $occupiedRelays = $property->getValue();
-        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        \Testo\Assert::instanceOf($occupiedRelays[$id], SocketRelay::class);
         $occupiedRelays[$id]->close();
 
         $ids = [];
@@ -539,7 +575,7 @@ abstract class MultiRPC extends TestCase
         }
 
         foreach ($this->rpc->getResponses($ids) as $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
         }
 
         // In this case there may be two different scenarios, which is why there are three tests basically doing the same
@@ -550,21 +586,20 @@ abstract class MultiRPC extends TestCase
         $discovered = !isset($property->getValue()[$id]);
 
         if ($discovered) {
-            $this->expectException(RPCException::class);
-            $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
+            Expect::exception(RPCException::class)->withMessageContaining(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         } else {
-            $this->expectException(TransportException::class);
-            $this->expectExceptionMessage('Unable to read payload from the stream');
+            Expect::exception(TransportException::class)->withMessageContaining('Unable to read payload from the stream');
         }
         $this->rpc->getResponse($id);
     }
 
+    #[Test]
     public function testHandleRelayDisconnectWithPressureForceDiscovered(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
         $occupiedRelays = $property->getValue();
-        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        \Testo\Assert::instanceOf($occupiedRelays[$id], SocketRelay::class);
         $occupiedRelays[$id]->close();
 
         $ids = [];
@@ -573,7 +608,7 @@ abstract class MultiRPC extends TestCase
         }
 
         foreach ($this->rpc->getResponses($ids) as $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
         }
 
         // In this case there may be two different scenarios, which is why there are three tests basically doing the same
@@ -588,17 +623,17 @@ abstract class MultiRPC extends TestCase
             $method->invoke($this->rpc);
         }
 
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
+        Expect::exception(RPCException::class)->withMessageContaining(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         $this->rpc->getResponse($id);
     }
 
+    #[Test]
     public function testHandleRelayDisconnectWithPressureForceUndiscovered(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $occupiedProperty = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
         $occupiedRelays = $occupiedProperty->getValue();
-        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        \Testo\Assert::instanceOf($occupiedRelays[$id], SocketRelay::class);
         $occupiedRelays[$id]->close();
 
         $ids = [];
@@ -607,7 +642,7 @@ abstract class MultiRPC extends TestCase
         }
 
         foreach ($this->rpc->getResponses($ids) as $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
         }
 
         // In this case there may be two different scenarios, which is why there are three tests basically doing the same
@@ -629,34 +664,29 @@ abstract class MultiRPC extends TestCase
             $occupiedRelays[$id] = $relay;
             $mapProperty->setValue($seqToRelayMap);
             $occupiedProperty->setValue($occupiedRelays);
-
-
-            $this->expectException(RPCException::class);
-            $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         }
 
-        $this->expectException(TransportException::class);
-        $this->expectExceptionMessage('Unable to read payload from the stream');
+        Expect::exception(TransportException::class)->withMessageContaining('Unable to read payload from the stream');
         $this->rpc->getResponse($id);
     }
 
+    #[Test]
     public function testHandleRelayDisconnectWithPressureGetResponses(): void
     {
         $ids = [];
         $ids[] = $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
         $occupiedRelays = $property->getValue();
-        $this->assertInstanceOf(SocketRelay::class, $occupiedRelays[$id]);
+        \Testo\Assert::instanceOf($occupiedRelays[$id], SocketRelay::class);
         $occupiedRelays[$id]->close();
 
         for ($i = 0; $i < 50; $i++) {
             $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
         }
 
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
+        Expect::exception(RPCException::class)->withMessageContaining(GoridgeMultiRPC::ERR_INVALID_SEQ_NUMBER);
         foreach ($this->rpc->getResponses($ids) as $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
         }
     }
 
@@ -665,6 +695,7 @@ abstract class MultiRPC extends TestCase
      * Without cloning them explicitly they get shared and thus, when one RPC gets called, the freeRelays array
      * in the other RPC stays the same, making it reuse the just-used and still occupied relay.
      */
+    #[Test]
     public function testHandlesCloneCorrectly(): void
     {
         $this->rpc->preConnectRelays();
@@ -677,7 +708,7 @@ abstract class MultiRPC extends TestCase
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
         foreach ($property->getValue() as $relay) {
             /** @var ConnectedRelayInterface $relay */
-            $this->assertTrue($relay->isConnected());
+            \Testo\Assert::true($relay->isConnected());
         }
 
         $ids = [];
@@ -709,49 +740,51 @@ abstract class MultiRPC extends TestCase
                 }
             }
 
-            $this->fail("Should've thrown an Exception due to wrong codec");
+            \Testo\Assert::fail("Should've thrown an Exception due to wrong codec");
         } catch (CodecException $exception) {
-            $this->assertNotEmpty($exception->getMessage());
+            \Testo\Assert::false(empty($exception->getMessage()));
         }
 
         // The $seq should not be available anymore
         try {
             $response = $clonedRpc->getResponse($clonedIds[0]);
-            $this->fail("Should've thrown an exception due to wrong seq");
+            \Testo\Assert::fail("Should've thrown an exception due to wrong seq");
         } catch (RPCException $exception) {
-            $this->assertNotEmpty($exception->getMessage());
+            \Testo\Assert::false(empty($exception->getMessage()));
         }
 
         array_shift($clonedIds);
 
         foreach ($this->rpc->getResponses($ids) as $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
         }
 
         foreach ($clonedRpc->getResponses($clonedIds) as $response) {
-            $this->assertSame('Hello', $response);
+            \Testo\Assert::same($response, 'Hello');
         }
     }
 
+    #[Test]
     public function testNeedsAtLeastOne(): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
         $property->setValue([]);
         $this->expectedNumberOfRelays = 0;
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage("MultiRPC needs at least one relay. Zero provided.");
+        Expect::exception(RPCException::class)->withMessageContaining("MultiRPC needs at least one relay. Zero provided.");
         new GoridgeMultiRPC([]);
     }
 
+    #[Test]
     public function testChecksIfResponseIsInRelay(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         // Wait a bit
         usleep(100 * 1000);
 
-        $this->assertTrue($this->rpc->hasResponse($id));
+        \Testo\Assert::true($this->rpc->hasResponse($id));
     }
 
+    #[Test]
     public function testChecksIfResponseIsInBuffer(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
@@ -759,15 +792,17 @@ abstract class MultiRPC extends TestCase
         usleep(100 * 1000);
         $this->forceFlushRpc();
 
-        $this->assertTrue($this->rpc->hasResponse($id));
+        \Testo\Assert::true($this->rpc->hasResponse($id));
     }
 
+    #[Test]
     public function testChecksIfResponseIsNotReceivedYet(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
-        $this->assertFalse($this->rpc->hasResponse($id));
+        \Testo\Assert::false($this->rpc->hasResponse($id));
     }
 
+    #[Test]
     public function testChecksMultipleResponses(): void
     {
         $ids = [];
@@ -777,17 +812,19 @@ abstract class MultiRPC extends TestCase
         usleep(100 * 1000);
         $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
         $responses = $this->rpc->hasResponses($ids);
-        $this->assertContains($ids[0], $responses);
-        $this->assertContains($ids[1], $responses);
-        $this->assertNotContains($ids[2], $responses);
+        \Testo\Assert::contains($responses, $ids[0]);
+        \Testo\Assert::contains($responses, $ids[1]);
+        \Testo\Assert::iterable($responses)->notContains($ids[2]);
     }
 
+    #[Test]
     public function testHasResponsesReturnsEmptyArrayWhenNoResponses(): void
     {
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
-        $this->assertEmpty($this->rpc->hasResponses([$id]));
+        \Testo\Assert::blank($this->rpc->hasResponses([$id]));
     }
 
+    #[Test]
     public function testGetResponsesReturnsWhenNoRelaysAvailableToAvoidInfiniteLoop(): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
@@ -795,11 +832,11 @@ abstract class MultiRPC extends TestCase
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'occupiedRelays');
         $property->setValue([]);
         $this->expectedNumberOfRelays = 0;
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage("No relays available at all");
+        Expect::exception(RPCException::class)->withMessageContaining("No relays available at all");
         $this->rpc->call('Service.Ping', 'ping');
     }
 
+    #[Test]
     public function testMultiRPCIsUsableWithOneRelay(): void
     {
         $this->makeRPC(1);
@@ -807,29 +844,30 @@ abstract class MultiRPC extends TestCase
         $this->rpc->callIgnoreResponse('Service.SleepEcho', 'Hello');
         $id = $this->rpc->callAsync('Service.Ping', 'ping');
         $this->rpc->callIgnoreResponse('Service.Echo', 'Hello');
-        $this->assertSame('pong', $this->rpc->call('Service.Ping', 'ping'));
-        $this->assertSame('pong', $this->rpc->getResponse($id));
+        \Testo\Assert::same($this->rpc->call('Service.Ping', 'ping'), 'pong');
+        \Testo\Assert::same($this->rpc->getResponse($id), 'pong');
     }
 
+    #[Test]
     public function testThrowsWhenMixedRelaysProvided(): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
         $property->setValue([]);
         $this->expectedNumberOfRelays = 0;
         $relays = [new StreamRelay(STDIN, STDOUT), $this->makeRelay()];
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
+        Expect::exception(RPCException::class)->withMessageContaining("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
         new GoridgeMultiRPC($relays);
     }
 
+    #[Test]
     public function testThrowsWhenRelaysDontMatchExistingOnes(): void
     {
         $relays = [new StreamRelay(STDIN, STDOUT)];
-        $this->expectException(RPCException::class);
-        $this->expectExceptionMessage("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
+        Expect::exception(RPCException::class)->withMessageContaining("MultiRPC can only be used with all relays of the same type, such as a " . SocketRelay::class);
         new GoridgeMultiRPC($relays);
     }
 
+    #[BeforeTest]
     protected function setUp(): void
     {
         $this->makeRPC();
@@ -862,11 +900,6 @@ abstract class MultiRPC extends TestCase
         return new SocketRelay(static::SOCK_ADDR, static::SOCK_PORT, static::SOCK_TYPE);
     }
 
-    protected function tearDown(): void
-    {
-        $this->assertFreeRelaysCorrectNumber();
-    }
-
     protected function assertFreeRelaysCorrectNumber(): void
     {
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
@@ -876,11 +909,7 @@ abstract class MultiRPC extends TestCase
         $property = new ReflectionProperty(GoridgeMultiRPC::class, 'seqToRelayMap');
         $numberOfWaitingResponses = count($property->getValue());
 
-        $this->assertSame(
-            $this->expectedNumberOfRelays,
-            $numberOfFreeRelays + $numberOfOccupiedRelays,
-            "RPC has lost at least one relay! Waiting Responses: $numberOfWaitingResponses, Free Relays: $numberOfFreeRelays, Occupied Relays: $numberOfOccupiedRelays"
-        );
+        \Testo\Assert::same($numberOfFreeRelays + $numberOfOccupiedRelays, $this->expectedNumberOfRelays, "RPC has lost at least one relay! Waiting Responses: $numberOfWaitingResponses, Free Relays: $numberOfFreeRelays, Occupied Relays: $numberOfOccupiedRelays");
     }
 
     protected function forceFlushRpc(): void
@@ -891,9 +920,9 @@ abstract class MultiRPC extends TestCase
             $ids[] = $this->rpc->callAsync('Service.Ping', 'ping');
         }
         foreach ($this->rpc->getResponses($ids) as $id => $response) {
-            $this->assertSame('pong', $response);
+            \Testo\Assert::same($response, 'pong');
             array_splice($ids, array_search($id, $ids, true), 1);
         }
-        $this->assertEmpty($ids);
+        \Testo\Assert::blank($ids);
     }
 }

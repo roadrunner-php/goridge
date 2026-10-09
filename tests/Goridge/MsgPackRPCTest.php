@@ -7,15 +7,18 @@ namespace Spiral\Goridge\Tests;
 use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Spiral\Goridge\RPC\Exception\ServiceException;
 use Spiral\Goridge\RPC\RPC;
+use Testo\Expect;
+use Testo\Test;
 
-class MsgPackRPCTest extends \Spiral\Goridge\Tests\RPC
+#[Test]
+final class MsgPackRPCTest extends \Spiral\Goridge\Tests\RPC
 {
     /**
      * @throws \Exception
      */
     public function testJsonException(): void
     {
-        $this->expectException(ServiceException::class);
+        Expect::exception(ServiceException::class);
 
         $conn = $this->makeRPC();
 

@@ -43,12 +43,11 @@
     },
     "require-dev": {
         "google/protobuf": "^3.22 || ^4.0",
-        "infection/infection": "^0.29.0",
         "jetbrains/phpstorm-attributes": "^1.0",
-        "phpunit/phpunit": "^10.5.45",
         "rybakit/msgpack": "^0.7",
         "spiral/code-style": "*",
-        "vimeo/psalm": "^6.0"
+        "testo/testo": "^0.10.55",
+        "vimeo/psalm": "^6 || ^7"
     },
     "autoload": {
         "psr-4": {
@@ -73,8 +72,8 @@
         "google/protobuf": "(^3.0) Protobuf codec support"
     },
     "scripts": {
-        "test": "phpunit --no-coverage --colors=always",
-        "test-cover": "phpunit --coverage-clover=coverage.xml",
+        "test": "testo",
+        "test-cover": "testo --coverage",
         "test-static": "psalm --no-cache",
         "test-mutations": "infection",
         "cs:diff": "php-cs-fixer fix --dry-run -v --diff --show-progress dots",
@@ -86,7 +85,6 @@
     "prefer-stable": true,
     "config": {
         "allow-plugins": {
-            "infection/extension-installer": true,
             "composer/package-versions-deprecated": true
         },
         "sort-packages": true

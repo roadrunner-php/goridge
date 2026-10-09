@@ -5,6 +5,7 @@
             "src"
         ]
     },
+    "testFramework": "testo",
     "mutators": {
         "@default": true
     }

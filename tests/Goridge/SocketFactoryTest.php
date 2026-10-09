@@ -4,21 +4,23 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\Tests;
 
-use PHPUnit\Framework\TestCase;
 use Spiral\Goridge\Exception\InvalidArgumentException;
 use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\SocketType;
+use Testo\Assert;
+use Testo\Data\DataProvider;
+use Testo\Expect;
+use Testo\Test;
 
-class SocketFactoryTest extends TestCase
+#[Test]
+final class SocketFactoryTest
 {
-    /**
-     * @dataProvider constructorProvider
-     */
+    #[DataProvider('constructorProvider')]
     public function testConstructing(string $address, ?int $port, SocketType $type, ?string $exception = null): void
     {
-        $this->assertTrue(true);
+        Assert::true(true);
         if ($exception !== null) {
-            $this->expectException($exception);
+            Expect::exception($exception);
         }
         new SocketRelay($address, $port, $type);
     }
