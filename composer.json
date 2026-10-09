@@ -45,7 +45,7 @@
         "google/protobuf": "^3.22 || ^4.0",
         "jetbrains/phpstorm-attributes": "^1.0",
         "rybakit/msgpack": "^0.7",
-        "spiral/code-style": "*",
+        "spiral/code-style": "^2.3.1",
         "testo/testo": "^0.10.55",
         "vimeo/psalm": "^6 || ^7"
     },
@@ -76,7 +76,7 @@
         "test-cover": "testo --coverage",
         "test-static": "psalm --no-cache",
         "test-mutations": "infection",
-        "cs:diff": "php-cs-fixer fix --dry-run -v --diff --show-progress dots",
+        "cs:diff": "php-cs-fixer fix --dry-run -v --diff",
         "cs:fix": "php-cs-fixer fix -v",
         "psalm": "psalm",
         "psalm:baseline": "psalm --set-baseline=psalm-baseline.xml"
