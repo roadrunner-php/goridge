@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+## [4.4.0](https://github.com/roadrunner-php/goridge/compare/4.3.0...4.4.0) (2026-10-09)
+
+
+### Features
+
+* require PHP 8.2 ([70533ce](https://github.com/roadrunner-php/goridge/commit/70533ce1ec26ba437ccd8f071e2a99fc221471e9))
+
+
+### Code Refactoring
+
+* mark overriding methods with #[\Override] ([6c1bf4d](https://github.com/roadrunner-php/goridge/commit/6c1bf4d5ba372a626c39662e3e9a2f1c898ed4e7))
+
 ## [4.3.0](https://github.com/roadrunner-php/goridge/compare/4.2.2...4.3.0) (2026-10-09)
 
 
