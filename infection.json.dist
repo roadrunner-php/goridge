@@ -1,11 +1,20 @@
 {
-    "$schema": "vendor/infection/infection/resources/schema.json",
+    "$schema": "https://raw.githubusercontent.com/infection/infection/0.35.6/resources/schema.json",
     "source": {
         "directories": [
             "src"
         ]
     },
     "testFramework": "testo",
+    "tmpDir": "runtime",
+    "timeout": 15,
+    "logs": {
+        "text": "runtime/infection.log",
+        "github": true,
+        "stryker": {
+            "report": "4.x"
+        }
+    },
     "mutators": {
         "@default": true
     }
