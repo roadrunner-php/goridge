@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\RPC\Codec;
 
-use Spiral\Goridge\Frame;
 use Google\Protobuf\Internal\Message;
+use Spiral\Goridge\Frame;
 use Spiral\Goridge\RPC\CodecInterface;
 
 final class ProtobufCodec implements CodecInterface

@@ -53,7 +53,7 @@ abstract class AbstractRPC implements RPCInterface
     }
 
     /**
-     * @throws Exception\ServiceException
+     * @throws ServiceException
      */
     protected function decodeResponse(Frame $frame, RelayInterface $relay, mixed $options = null): mixed
     {

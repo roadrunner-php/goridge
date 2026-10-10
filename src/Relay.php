@@ -30,7 +30,7 @@ abstract class Relay implements RelayInterface
         }
 
         if (!\preg_match(self::CONNECTION_EXP, $connection, $match)) {
-            throw new Exception\RelayFactoryException('unsupported connection format');
+            throw new RelayFactoryException('unsupported connection format');
         }
 
         /** @var array{protocol: non-empty-string, arg1: non-empty-string, arg2: non-empty-string} $match */
@@ -59,7 +59,7 @@ abstract class Relay implements RelayInterface
                 return new StreamRelay(self::openIn($match['arg1']), self::openOut($match['arg2']));
 
             default:
-                throw new Exception\RelayFactoryException('unknown connection protocol');
+                throw new RelayFactoryException('unknown connection protocol');
         }
     }
 

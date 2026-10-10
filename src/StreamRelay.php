@@ -59,7 +59,7 @@ class StreamRelay extends Relay implements BlockingRelayInterface
         }
 
         if (!$this->assertWritable($out)) {
-            throw new Exception\InvalidArgumentException('Output resource stream must be writable');
+            throw new InvalidArgumentException('Output resource stream must be writable');
         }
 
         $this->in = $in;
