@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+## [4.5.0](https://github.com/roadrunner-php/goridge/compare/4.4.0...4.5.0) (2026-10-10)
+
+
+### Features
+
+* rename the package to roadrunner/goridge ([7e79485](https://github.com/roadrunner-php/goridge/commit/7e79485a9cbb5cfcc35523541b74ab96e1070e91))
+
+
+### Documentation
+
+* refresh README header, badges and installation ([#46](https://github.com/roadrunner-php/goridge/issues/46)) ([1e5e846](https://github.com/roadrunner-php/goridge/commit/1e5e846353edff4d5a12d4dffd913d42c36371a5))
+
 ## [4.4.0](https://github.com/roadrunner-php/goridge/compare/4.3.0...4.4.0) (2026-10-09)
 
 
