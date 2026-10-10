@@ -1,40 +1,59 @@
 {
-    "name": "spiral/goridge",
-    "type": "goridge",
-    "description": "High-performance PHP-to-Golang RPC bridge",
+    "name": "roadrunner/goridge",
+    "type": "library",
+    "description": "High-performance PHP-to-Go IPC bridge: the RPC transport between PHP workers and the RoadRunner application server",
+    "keywords": [
+        "roadrunner",
+        "goridge",
+        "rpc",
+        "ipc",
+        "golang",
+        "relay",
+        "socket",
+        "pipes",
+        "msgpack",
+        "protobuf"
+    ],
     "license": "MIT",
     "authors": [
         {
-            "name": "Anton Titov (wolfy-j)",
-            "email": "wolfy-j@spiralscout.com"
+            "name": "Anton Titov",
+            "homepage": "https://github.com/wolfy-j"
         },
         {
             "name": "Valery Piashchynski",
             "homepage": "https://github.com/rustatian"
         },
         {
-            "name": "Aleksei Gagarin (roxblnfk)",
+            "name": "Aleksei Gagarin",
             "homepage": "https://github.com/roxblnfk"
         },
         {
-            "name": "Pavel Buchnev (butschster)",
-            "email": "pavel.buchnev@spiralscout.com"
+            "name": "Pavel Buchnev",
+            "homepage": "https://github.com/butschster"
         },
         {
-            "name": "Maksim Smakouz (msmakouz)",
-            "email": "maksim.smakouz@spiralscout.com"
+            "name": "Maksim Smakouz",
+            "homepage": "https://github.com/msmakouz"
         },
         {
             "name": "RoadRunner Community",
             "homepage": "https://github.com/roadrunner-server/roadrunner/graphs/contributors"
         }
     ],
-    "homepage": "https://spiral.dev/",
+    "homepage": "https://roadrunner.dev/",
     "support": {
-        "docs": "https://docs.roadrunner.dev",
+        "docs": "https://docs.roadrunner.dev/docs/php-worker/rpc",
         "issues": "https://github.com/roadrunner-server/roadrunner/issues",
+        "source": "https://github.com/roadrunner-php/goridge",
         "chat": "https://discord.gg/V6EK4he"
     },
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/roadrunner-server"
+        }
+    ],
     "require": {
         "php": ">=8.2",
         "ext-json": "*",
@@ -42,12 +61,21 @@
         "spiral/roadrunner": "^3.0"
     },
     "require-dev": {
-        "google/protobuf": "^3.22 || ^4.0",
+        "google/protobuf": "^3.22 || ^4.0 || ^5.0",
         "jetbrains/phpstorm-attributes": "^1.0",
         "rybakit/msgpack": "^0.7",
         "spiral/code-style": "^2.3.1",
         "testo/testo": "^0.10.55",
         "vimeo/psalm": "^6 || ^7"
+    },
+    "replace": {
+        "spiral/goridge": "self.version"
+    },
+    "suggest": {
+        "ext-msgpack": "MessagePack codec support",
+        "ext-protobuf": "Protobuf codec support",
+        "google/protobuf": "(^3.22 || ^4.0 || ^5.0) Protobuf codec support",
+        "rybakit/msgpack": "(^0.7) MessagePack codec support"
     },
     "autoload": {
         "psr-4": {
@@ -58,18 +86,6 @@
         "psr-4": {
             "Spiral\\Goridge\\Tests\\": "tests/Goridge"
         }
-    },
-    "funding": [
-        {
-            "type": "github",
-            "url": "https://github.com/sponsors/roadrunner-server"
-        }
-    ],
-    "suggest": {
-        "ext-msgpack": "MessagePack codec support",
-        "ext-protobuf": "Protobuf codec support",
-        "rybakit/msgpack": "(^0.7) MessagePack codec support",
-        "google/protobuf": "(^3.0) Protobuf codec support"
     },
     "scripts": {
         "test": "testo",

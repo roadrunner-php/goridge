@@ -20,7 +20,7 @@ return new ApplicationConfig(
         new CodecovPlugin(
             collect: CoverageMode::Never,
             reports: [
-                new CloverReport(__DIR__ . '/runtime/coverage/clover.xml', 'spiral/goridge'),
+                new CloverReport(__DIR__ . '/runtime/coverage/clover.xml', 'roadrunner/goridge'),
             ],
         ),
     ],

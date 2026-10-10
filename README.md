@@ -28,13 +28,13 @@ The Golang part lives in [roadrunner-server/goridge](https://github.com/roadrunn
 ### Installation
 
 ```bash
-composer require spiral/goridge
+composer require roadrunner/goridge
 ```
 
-[![PHP](https://img.shields.io/packagist/php-v/spiral/goridge.svg?style=flat-square&logo=php)](https://packagist.org/packages/spiral/goridge)
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/spiral/goridge.svg?style=flat-square&logo=packagist)](https://packagist.org/packages/spiral/goridge)
-[![License](https://img.shields.io/packagist/l/spiral/goridge.svg?style=flat-square)](LICENSE)
-[![Total Downloads](https://img.shields.io/packagist/dt/spiral/goridge.svg?style=flat-square)](https://packagist.org/packages/spiral/goridge/stats)
+[![PHP](https://img.shields.io/packagist/php-v/roadrunner/goridge.svg?style=flat-square&logo=php)](https://packagist.org/packages/roadrunner/goridge)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/roadrunner/goridge.svg?style=flat-square&logo=packagist)](https://packagist.org/packages/roadrunner/goridge)
+[![License](https://img.shields.io/packagist/l/roadrunner/goridge.svg?style=flat-square)](LICENSE)
+[![Total Downloads](https://img.shields.io/packagist/dt/roadrunner/goridge.svg?style=flat-square)](https://packagist.org/packages/roadrunner/goridge/stats)
 
 ### Calling a Go service
 
