@@ -18,6 +18,7 @@ use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\SocketType;
 use Spiral\Goridge\StreamRelay;
 use Spiral\Goridge\Tests\Support\AfterEachTest;
+use Spiral\Goridge\Tests\Support\LargePayload;
 use Testo\Expect;
 use Testo\Lifecycle\BeforeTest;
 use Testo\Test;
@@ -277,12 +278,13 @@ abstract class MultiRPC
     #[Test]
     public function testLongRawBody(): void
     {
+        $this->makeSocketRPC();
         $payload = random_bytes(65000 * 1000);
 
-        $resp = $this->rpc->withCodec(new RawCodec())->call(
+        $resp = LargePayload::guard(fn(): mixed => $this->rpc->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload,
-        );
+        ));
 
         \Testo\Assert::same(strlen($resp), strlen($payload));
         \Testo\Assert::same(md5($resp), md5($payload));
@@ -291,14 +293,14 @@ abstract class MultiRPC
     #[Test]
     public function testLongRawBodyAsync(): void
     {
+        $this->makeSocketRPC();
         $payload = random_bytes(65000 * 1000);
 
         $this->rpc = $this->rpc->withCodec(new RawCodec());
-        $id = $this->rpc->callAsync(
+        $resp = LargePayload::guard(fn(): mixed => $this->rpc->getResponse($this->rpc->callAsync(
             'Service.EchoBinary',
             $payload,
-        );
-        $resp = $this->rpc->getResponse($id);
+        )));
 
         \Testo\Assert::same(strlen($resp), strlen($payload));
         \Testo\Assert::same(md5($resp), md5($payload));
@@ -873,6 +875,29 @@ abstract class MultiRPC
 
     protected function makeRPC(int $count = 10): void
     {
+        $this->resetRelayPool();
+        $type = self::SOCK_TYPE->value;
+        $address = self::SOCK_ADDR;
+        $port = self::SOCK_PORT;
+        $this->rpc = GoridgeMultiRPC::create("$type://$address:$port", $count);
+        $this->expectedNumberOfRelays = $count;
+    }
+
+    /**
+     * Builds the pool from socket relays rather than from a connection string.
+     *
+     * For tests that send a large payload: should {@see \Spiral\Goridge\Relay::create()} pick the
+     * STDIN/STDOUT pipes instead, the payload would go to the test process's own stdout.
+     */
+    protected function makeSocketRPC(int $count = 10): void
+    {
+        $this->resetRelayPool();
+        $this->rpc = new GoridgeMultiRPC(\array_map(fn(): RelayInterface => $this->makeRelay(), \range(1, $count)));
+        $this->expectedNumberOfRelays = $count;
+    }
+
+    protected function resetRelayPool(): void
+    {
         // We need to manually clean the static properties between test runs.
         // In an actual application this would never happen.
         $property = new \ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
@@ -883,11 +908,6 @@ abstract class MultiRPC
         $property->setValue([]);
         $property = new \ReflectionProperty(GoridgeMultiRPC::class, 'asyncResponseBuffer');
         $property->setValue([]);
-        $type = self::SOCK_TYPE->value;
-        $address = self::SOCK_ADDR;
-        $port = self::SOCK_PORT;
-        $this->rpc = GoridgeMultiRPC::create("$type://$address:$port", $count);
-        $this->expectedNumberOfRelays = $count;
     }
 
     protected function makeRelay(): RelayInterface
