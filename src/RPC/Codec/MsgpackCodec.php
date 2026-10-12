@@ -11,9 +11,17 @@ use Spiral\Goridge\RPC\CodecInterface;
 /**
  * @psalm-type PackHandler = \Closure(mixed): string
  * @psalm-type UnpackHandler = \Closure(string, mixed|null): mixed
+ *
+ * @deprecated RoadRunner 3 (Goridge v4) does not support MessagePack: the server drops the connection
+ *             on a MessagePack frame. Use the default {@see JsonCodec} or {@see ProtobufCodec} instead.
+ *             The codec will be removed in the next major version.
  */
 final class MsgpackCodec implements CodecInterface
 {
+    private const DEPRECATION = 'Spiral\Goridge\RPC\Codec\MsgpackCodec is deprecated: RoadRunner 3 (Goridge v4)'
+        . ' does not support MessagePack. Use JsonCodec or ProtobufCodec instead.'
+        . ' The codec will be removed in the next major version.';
+
     /**
      * @var PackHandler
      * @psalm-suppress PropertyNotSetInConstructor Reason: Initialized via {@see initPacker()}
@@ -31,6 +39,9 @@ final class MsgpackCodec implements CodecInterface
      */
     public function __construct()
     {
+        // Silenced: the notice reaches only error handlers that collect deprecations, the default one stays quiet.
+        @\trigger_error(self::DEPRECATION, \E_USER_DEPRECATED);
+
         $this->initPacker();
     }
 

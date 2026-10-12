@@ -40,4 +40,23 @@ final class MsgpackCodecTest
         Assert::same($codec->getIndex(), Frame::CODEC_MSGPACK);
         Assert::same($codec->decode($codec->encode($payload)), $payload);
     }
+
+    public function testConstructorTriggersDeprecation(): void
+    {
+        $notices = [];
+        \set_error_handler(static function (int $level, string $message) use (&$notices): bool {
+            $notices[] = [$level, $message];
+            return true;
+        });
+
+        try {
+            new MsgpackCodec();
+        } finally {
+            \restore_error_handler();
+        }
+
+        Assert::count($notices, 1);
+        Assert::same($notices[0][0], \E_USER_DEPRECATED);
+        Assert::string($notices[0][1])->contains('MsgpackCodec is deprecated');
+    }
 }

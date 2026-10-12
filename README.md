@@ -62,7 +62,10 @@ More examples, including the Go server side, can be found in [this directory](./
 
 ### Codecs
 
-JSON is the default codec. Use `withCodec()` to switch to `MsgpackCodec`, `ProtobufCodec` or `RawCodec` from the `Spiral\Goridge\RPC\Codec` namespace.
+JSON is the default codec. Use `withCodec()` to switch to `ProtobufCodec` or `RawCodec` from the `Spiral\Goridge\RPC\Codec` namespace.
+
+> [!WARNING]
+> `MsgpackCodec` is deprecated and will be removed in the next major version: RoadRunner 3 (Goridge v4) does not support MessagePack.
 
 ## Features
 
@@ -71,7 +74,7 @@ JSON is the default codec. Use `withCodec()` to switch to `MsgpackCodec`, `Proto
  - very fast (300k calls per second on Ryzen 1700X over 20 threads)
  - native `net/rpc` integration, ability to connect to existing application(s)
  - standalone protocol usage
- - structured data transfer using JSON, MessagePack or Protobuf, and raw payloads
+ - structured data transfer using JSON or Protobuf, and raw payloads
  - `[]byte` transfer, including big payloads
  - asynchronous calls over a pool of relays with `MultiRPC`
  - service, message and transport level error handling
