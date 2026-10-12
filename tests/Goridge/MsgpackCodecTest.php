@@ -9,7 +9,6 @@ use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Testo\Assert;
 use Testo\Codecov\Covers;
 use Testo\Core\Exception\SkipTest;
-use Testo\Skip;
 use Testo\Test;
 
 #[Test]
@@ -29,7 +28,6 @@ final class MsgpackCodecTest
         Assert::same($codec->decode($codec->encode($payload)), $payload);
     }
 
-    #[Skip('MsgpackCodec::initPacker() lacks a return after the rybakit/msgpack branch, so without ext-msgpack the constructor always throws LogicException')]
     public function testRoundTripWithLibrary(): void
     {
         if (\extension_loaded('msgpack')) {
