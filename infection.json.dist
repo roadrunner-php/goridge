@@ -7,7 +7,7 @@
     },
     "testFramework": "testo",
     "tmpDir": "runtime",
-    "timeout": 15,
+    "timeout": 5,
     "logs": {
         "text": "runtime/infection.log",
         "github": true,

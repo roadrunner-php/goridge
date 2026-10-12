@@ -50,6 +50,6 @@ jobs:
         run: docker run --name test-server --rm -d -p "7079:7079/tcp" test-server:local
 
       - name: Run Infection
-        run: vendor/bin/infection --threads=max --logger-github --show-mutations=0 --min-msi=90 --min-covered-msi=90
+        run: vendor/bin/infection --threads=max --logger-github --show-mutations=0 --no-progress --min-msi=90 --min-covered-msi=90
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ github.event_name == 'push' && secrets.STRYKER_DASHBOARD_API_KEY || '' }}
