@@ -4,29 +4,35 @@ declare(strict_types=1);
 
 namespace Spiral\Goridge\Tests;
 
+use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\RPC\Codec\MsgpackCodec;
-use Spiral\Goridge\RPC\Exception\ServiceException;
-use Spiral\Goridge\RPC\RPC;
-use Testo\Expect;
+use Spiral\Goridge\RPC\RPC as GoridgeRPC;
+use Spiral\Goridge\SocketRelay;
+use Testo\Assert;
 use Testo\Test;
 
+/**
+ * Goridge v4 refuses MessagePack frames, which is why {@see MsgpackCodec} is deprecated.
+ */
 #[Test]
-final class MsgPackRPCTest extends \Spiral\Goridge\Tests\RPC
+final class MsgPackRPCTest
 {
-    /**
-     * @throws \Exception
-     */
-    public function testJsonException(): void
+    public function testServerDropsConnectionOnMsgpackFrame(): void
     {
-        Expect::exception(ServiceException::class);
+        $rpc = (new GoridgeRPC($this->makeRelay()))->withCodec(new MsgpackCodec());
 
-        $conn = $this->makeRPC();
+        try {
+            $rpc->call('Service.Ping', 'ping');
+            Assert::fail('The server should have refused the MessagePack frame');
+        } catch (TransportException $e) {
+            Assert::notBlank($e->getMessage());
+        }
 
-        $conn->call('Service.Process', random_bytes(256));
+        Assert::same((new GoridgeRPC($this->makeRelay()))->call('Service.Ping', 'ping'), 'pong');
     }
 
-    protected function makeRPC(): RPC
+    private function makeRelay(): SocketRelay
     {
-        return (new RPC($this->makeRelay()))->withCodec(new MsgpackCodec());
+        return new SocketRelay(RPC::SOCK_ADDR, RPC::SOCK_PORT, RPC::SOCK_TYPE);
     }
 }
