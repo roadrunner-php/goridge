@@ -11,6 +11,7 @@ use Spiral\Goridge\RPC\Exception\ServiceException;
 use Spiral\Goridge\RPC\RPC as GoridgeRPC;
 use Spiral\Goridge\SocketRelay;
 use Spiral\Goridge\SocketType;
+use Spiral\Goridge\Tests\Support\LargePayload;
 use Testo\Assert;
 use Testo\Expect;
 use Testo\Test;
@@ -177,10 +178,10 @@ abstract class RPC
         $conn = $this->makeRPC();
         $payload = random_bytes(65000 * 1000);
 
-        $resp = $conn->withCodec(new RawCodec())->call(
+        $resp = LargePayload::guard(static fn(): mixed => $conn->withCodec(new RawCodec())->call(
             'Service.EchoBinary',
             $payload,
-        );
+        ));
 
         Assert::same(strlen($resp), strlen($payload));
         Assert::same(md5($resp), md5($payload));
