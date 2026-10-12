@@ -7,8 +7,6 @@ namespace Spiral\Goridge\Tests;
 use Spiral\Goridge\ConnectedRelayInterface;
 use Spiral\Goridge\Exception\TransportException;
 use Spiral\Goridge\RelayInterface;
-use Spiral\Goridge\RPC\Codec\JsonCodec;
-use Spiral\Goridge\RPC\Codec\MsgpackCodec;
 use Spiral\Goridge\RPC\Codec\RawCodec;
 use Spiral\Goridge\RPC\Exception\CodecException;
 use Spiral\Goridge\RPC\Exception\RPCException;
@@ -700,10 +698,7 @@ abstract class MultiRPC
     {
         $this->rpc->preConnectRelays();
 
-        // This is to support the MsgPackMultiRPC Tests
-        $property = new \ReflectionProperty(GoridgeMultiRPC::class, 'codec');
-        $codec = $property->getValue($this->rpc);
-        $clonedRpc = $this->rpc->withCodec($codec instanceof MsgpackCodec ? new JsonCodec() : new MsgpackCodec());
+        $clonedRpc = $this->rpc->withCodec(new RawCodec());
 
         $property = new \ReflectionProperty(GoridgeMultiRPC::class, 'freeRelays');
         foreach ($property->getValue() as $relay) {
@@ -719,27 +714,14 @@ abstract class MultiRPC
         }
 
         for ($i = 0; $i < 50; $i++) {
-            $clonedIds[] = $clonedRpc->callAsync('Service.Echo', 'Hello');
+            $clonedIds[] = $clonedRpc->callAsync('Service.EchoBinary', 'Hello');
         }
         // Wait 100ms for the response(s)
         usleep(100 * 1000);
 
         // Can use wrong RPC for response (unfortunately, but there's no easy solution)
         try {
-            $response = $this->rpc->getResponse($clonedIds[0]);
-            $property = new \ReflectionProperty(GoridgeMultiRPC::class, 'codec');
-
-            if ($property->getValue($this->rpc) instanceof MsgpackCodec) {
-                // Msgpack internally does not throw an error, only returns the encoded response because of course why
-                // would normal error handling be something that is important in a library.
-                // Locally this returned the number 34, but I'm not sure if there's some variation in that
-                // so we test on the expected response.
-                // This also notifies PHPUnit since msgpack logs a warning.
-                if ($response !== 'Hello') {
-                    throw new CodecException("msgpack is a big meany");
-                }
-            }
-
+            $this->rpc->getResponse($clonedIds[0]);
             \Testo\Assert::fail("Should've thrown an Exception due to wrong codec");
         } catch (CodecException $exception) {
             \Testo\Assert::false(empty($exception->getMessage()));
