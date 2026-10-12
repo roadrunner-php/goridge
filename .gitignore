@@ -1,18 +1,8 @@
-# Composer lock file
-composer.lock
-
-# IDEs
-/.idea
-/.vscode
-
-# Vendors
-/vendor
-/runtime
-**/vendor
-
-# Temp dirs & trash
-/tests/server*
-clover*
-cover*
-.DS_Store
-*.cache
+/.*/
+!/.github/
+/runtime/
+/vendor/
+/.env
+*.log
+/composer.lock
+/examples/vendor/
