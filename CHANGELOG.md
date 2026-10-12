@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+## [4.6.0](https://github.com/roadrunner-php/goridge/compare/4.5.0...4.6.0) (2026-10-12)
+
+
+### Features
+
+* deprecate MsgpackCodec and Frame::CODEC_MSGPACK ([414fbe0](https://github.com/roadrunner-php/goridge/commit/414fbe0de64ee1462d240569feb8b9e0c2dd817d))
+
+
+### Bug Fixes
+
+* initialize MsgpackCodec with rybakit/msgpack when ext-msgpack is missing ([68ca1af](https://github.com/roadrunner-php/goridge/commit/68ca1af225ba852873d4e13821fe804ac73d807e))
+
 ## [4.5.0](https://github.com/roadrunner-php/goridge/compare/4.4.0...4.5.0) (2026-10-10)
 
 
