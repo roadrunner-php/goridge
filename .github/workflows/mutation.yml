@@ -53,3 +53,11 @@ jobs:
         run: vendor/bin/infection --threads=max --logger-github --show-mutations=0 --no-progress --min-msi=90 --min-covered-msi=90
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ github.event_name == 'push' && secrets.STRYKER_DASHBOARD_API_KEY || '' }}
+
+      - name: Upload Infection log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infection-log
+          path: runtime/infection.log
+          if-no-files-found: ignore
