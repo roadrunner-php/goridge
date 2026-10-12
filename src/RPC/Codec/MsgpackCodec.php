@@ -76,6 +76,8 @@ final class MsgpackCodec implements CodecInterface
             $this->pack = static fn(mixed $payload): string => MessagePack::pack($payload);
 
             $this->unpack = static fn(string $payload, $options = null): mixed => MessagePack::unpack($payload, $options);
+
+            return;
         }
 
         throw new \LogicException('Could not initialize codec, please install msgpack extension or library');
