@@ -38,7 +38,14 @@ final class Frame
      */
     public const CODEC_RAW     = 0x04;
     public const CODEC_JSON    = 0x08;
+
+    /**
+     * @deprecated RoadRunner 3 (Goridge v4) does not support MessagePack: the server drops the connection
+     *             on a frame with this flag. Use {@see self::CODEC_JSON} (the default) or {@see self::CODEC_PROTO}
+     *             instead. The constant will be removed in the next major version.
+     */
     public const CODEC_MSGPACK = 0x10;
+
     public const CODEC_GOB     = 0x20;
     public const CODEC_PROTO   = 0x80;
     /*#@-*/
