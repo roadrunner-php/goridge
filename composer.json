@@ -57,7 +57,7 @@
         "php": ">=8.2",
         "ext-json": "*",
         "ext-sockets": "*",
-        "spiral/roadrunner": "^3.0"
+        "roadrunner/roadrunner": "^3.0"
     },
     "require-dev": {
         "google/protobuf": "^3.22 || ^4.0 || ^5.0",
